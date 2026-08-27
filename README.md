@@ -1,5 +1,5 @@
 # Jai World - VRM Embodied AI
-Interact with your VRM Embodied agent in a 3D virtual world. A local Flask app that supports both Ollama and OpenRouter.<br>
+Interact with your VRM Embodied agent in a 3D virtual world. A local Flask app that supports both Ollama and OpenRouter. This is basic starter code. You can use vibe coding to expand and experiment.<br>
 Three.js + HTML + CSS + JS + Flask + Ollama/OpenRouter
 
 - You control Y-bot, a 3D character in a virtual world.

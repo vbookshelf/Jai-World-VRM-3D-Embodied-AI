@@ -38,6 +38,9 @@ Three.js + HTML + CSS + JS + Flask + Ollama/OpenRouter
 
 ## How X-bot percieves the world
 
+## Notes
+- Model reasoning is currently turned off. You can turn it on to improve performance, but this will also increase latency.
+
 ## References
 
 ## Versions

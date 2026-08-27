@@ -11,6 +11,17 @@ Three.js + HTML + CSS + JS + Flask + Ollama/OpenRouter
 - Use vibe coding (Claude Sonnet) to modify any aspect of the app - change the world design, change the model etc.
 - Easily replace X-bot or Y-bot with your own VRM characters.
 
+
+<br>
+
+<img src="images/image1.png" alt="Screenshot showing x-bot and y-bot" height="500">
+<p>X-bot (left) and Y-bot</p>
+
+<br>
+
+<img src="images/image2.png" alt="Screenshot showing x-bot and y-bot" height="500">
+<p>View of Jai World</p>
+
 <br>
 
 ## How this works

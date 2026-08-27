@@ -30,6 +30,8 @@ Three.js + HTML + CSS + JS + Flask + Ollama/OpenRouter
 
 ## Y-bot controls
 
+## Walking together
+
 ## X-bot capabilities
 
 ## How X-bot percieves the world

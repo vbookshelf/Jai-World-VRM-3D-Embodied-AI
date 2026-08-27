@@ -8,6 +8,7 @@ Three.js + HTML + CSS + JS + Flask + Ollama/OpenRouter
 - Take walks with X-bot or ask for a hug.
 - X-bot uses tool calling to execute actions.
 - X-bot is vision capable.
+- App has a dev console that shows the inner workings of the agent - responses, tool calls, images etc.
 - Use vibe coding (Claude Sonnet) to modify any aspect of the app - change the world design, change the model etc.
 - Easily replace X-bot or Y-bot with your own VRM characters.
 - In Thai, Jai means heart, mind, or spirit.

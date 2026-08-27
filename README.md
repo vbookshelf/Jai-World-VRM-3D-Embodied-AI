@@ -10,6 +10,7 @@ Three.js + HTML + CSS + JS + Flask + Ollama/OpenRouter
 - X-bot is vision capable.
 - Use vibe coding (Claude Sonnet) to modify any aspect of the app - change the world design, change the model etc.
 - Easily replace X-bot or Y-bot with your own VRM characters.
+- In Thai, Jai means heart, mind, or spirit.
 
 
 <br>

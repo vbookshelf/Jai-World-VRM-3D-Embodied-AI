@@ -38,6 +38,11 @@ Tech stack: Three.js + HTML + CSS + JS + Flask + Ollama/OpenRouter
 
 <br>
 
+<img src="images/image6.png" alt="Screenshot showing x-bot and y-bot dancing" height="500">
+<p>Dancing</p>
+
+<br>
+
 ## How to run this app
 
 To render the 3D graphics at a high frame rate your computer needs to have graphics acceleration. Without it the frame rate may be very slow. On an M4 Macbook Air this app runs at around 60 FPS.

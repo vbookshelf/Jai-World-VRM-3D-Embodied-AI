@@ -56,7 +56,7 @@ https://github.com/vbookshelf/mixamo-vrm-characters
 
 ## How is X-bot able to see the world?
 
-- Status info is with every prompt:
+- Status info is sent with every prompt:
 ```
 [status: distance_between_xbot_and_ybot=19.7m,
 xbot_pose=standing,

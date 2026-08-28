@@ -164,6 +164,13 @@ The Rumba dance routine is a mixamo animation.
 - Pick up, move and stack blocks.
 - Dance the Rumba.
 - If you need more info on any app capabilities try asking X-bot what it can do.
+  
+<br>
+
+## Exploration setup
+- The world includes 5 numbered locations.
+- X-bot can only access location info only when it's within 2m of a numbered location. It acesses location info by calling the get_info tool. For example, Location-2 is a seaside cafe.
+- This controlled disclosure of information about the world encourages exploration.
 
 <br>
 

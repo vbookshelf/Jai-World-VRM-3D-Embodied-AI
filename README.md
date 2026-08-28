@@ -43,7 +43,7 @@ https://github.com/vbookshelf/mixamo-vrm-characters
 
 <br>
 
-## How this app works
+## How does this app work?
 
 - The 3D world is built using three.js
 - The vrm characters (x-bot and y-bot) are loaded into this world
@@ -82,8 +82,8 @@ tool_call: get_status({})
 }
 ```
 - X-bot can also call tools to get the coordinates of the numbered locations and of the colored blocks.
-- X-bot is also vision capable. It can call a look_around tool that returns a composite image with four views - front, rear, left, right. Each time a new image is captured, the previous image is removed from the chat history.<br>
-  <img src="images/image4.png" alt="Image showing the 4 views that x-bot sees" height="300">
+- X-bot is vision capable. It can call a look_around tool that returns a composite image with four views - front, rear, left, right. Each time a new image is captured, the previous image is removed from the chat history.<br>
+  <img src="images/image4.png" alt="Image showing the 4 views that x-bot sees" height="400">
 
 
   

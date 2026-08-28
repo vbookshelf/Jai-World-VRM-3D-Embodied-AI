@@ -116,7 +116,8 @@ You need to have the following installed:
 - Terminal: uv sync
 
 If using OpenRouter:
-- Open the openrouter-app.py file and paste in your OpenRouter API key
+- Open the my-api-keys.env.txt file and paste in your OpenRouter API Key.
+- Change the file name from my-api-keys.env.txt to my-api-keys.env
 - Terminal: uv run python openrouter-app.py
 
 If using Ollama:

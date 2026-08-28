@@ -82,7 +82,7 @@ tool_call: get_status({})
 }
 ```
 - X-bot can also call tools to get the coordinates of the numbered locations and of the colored blocks.
-- X-bot is vision capable. It can call a look_around tool that returns a composite image with four views - front, rear, left, right. Each time a new image is captured, the previous image is removed from the chat history.<br>
+- X-bot is vision capable. It can call a look_around tool that returns a composite image with four views - front, rear, left, right. Imagine four cameras located on X-bot's head. Each time a new image is captured, the previous image is removed from the chat history.<br>
   <img src="images/image4.png" alt="Image showing the 4 views that x-bot sees" height="400">
 
 

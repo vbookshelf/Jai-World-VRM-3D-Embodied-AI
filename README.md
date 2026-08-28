@@ -114,9 +114,17 @@ If using Ollama:
 
 ```
 
-
+<br>
 
 ## Y-bot controls
+
+- Use the arrow keys or WASD keys to move.
+- Press the space bar to take off and fly.
+- Press the down arrow key to land.
+- When swimming under water, press the space bar to go up.
+- Tank controls are enabled by default. To turn them off click the button in the top left. Then you can move the camera around freely.
+
+<br>
 
 ## Walking together
 

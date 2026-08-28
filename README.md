@@ -1,8 +1,15 @@
 # Jai World - VRM Embodied AI
 Interact with your VRM Embodied agent in a 3D virtual world. A local Flask app that supports both Ollama and OpenRouter.
 
-This app is an experiment that explores embodied AI, AI spatial navigation, and virtual character interaction.<br>
+This desktop flask app is an experiment that explores embodied AI, AI spatial navigation, and virtual character interaction.<br>
 Tech stack: Three.js + HTML + CSS + JS + Flask + Ollama/OpenRouter
+
+<br>
+
+<img src="images/image1.png" alt="Screenshot showing x-bot and y-bot" height="500">
+<p>X-bot (left) and Y-bot (user controlled)</p>
+
+<br>
 
 - You control Y-bot, a 3D character in a virtual world.
 - You interact with X-bot, an AI controlled character.
@@ -15,11 +22,6 @@ Tech stack: Three.js + HTML + CSS + JS + Flask + Ollama/OpenRouter
 - Easily replace X-bot or Y-bot with your own VRM characters.
 - In Thai, Jai means heart, mind, or spirit.
 
-
-<br>
-
-<img src="images/image1.png" alt="Screenshot showing x-bot and y-bot" height="500">
-<p>X-bot (left) and Y-bot (user controlled)</p>
 
 <br>
 

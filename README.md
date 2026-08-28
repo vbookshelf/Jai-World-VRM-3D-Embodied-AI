@@ -54,6 +54,38 @@ https://github.com/vbookshelf/mixamo-vrm-characters
 
 <br>
 
+## How is X-bot able to see the world?
+
+- Status info is with every prompt:
+```
+[status: distance_between_xbot_and_ybot=19.7m,
+xbot_pose=standing,
+ybot_pose=sitting,
+xbot_facing_ybot=False,
+ybot_facing_xbot=False]
+```
+- X-bot can call a get_status tool that returns useful info:
+```
+tool_call: get_status({})
+{
+  "distance_between_xbot_and_ybot": 1.2,
+  "ok": true,
+  "xbot_facing_ybot": false,
+  "xbot_holding_block": null,
+  "xbot_near": "nowhere named (nearest is Location-2, 12.7m away)",
+  "xbot_pose": "sitting",
+  "xbot_position": "(-13.0, 5.3)",
+  "ybot_facing_xbot": false,
+  "ybot_near": "nowhere named (nearest is Location-2, 11.6m away)",
+  "ybot_pose": "standing",
+  "ybot_position": "(-12.7, 6.5)"
+}
+```
+- X-bot can call a look_around tool that returns a composite image with four views - front, rear, left, right:
+  
+
+<br>
+
 ## How to run the app
 
 ## Y-bot controls

@@ -26,6 +26,11 @@ Three.js + HTML + CSS + JS + Flask + Ollama/OpenRouter
 
 <br>
 
+<img src="images/image3.png" alt="Screenshot showing dev console open" height="500">
+<p>Dev console showing tool calls</p>
+
+<br>
+
 ## How this works
 
 ## How to run the app

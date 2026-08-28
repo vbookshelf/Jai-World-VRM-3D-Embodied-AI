@@ -41,10 +41,12 @@ Three.js + HTML + CSS + JS + Flask + Ollama/OpenRouter
 
 To render the 3D graphics at a high frame rate your computer needs to have graphics acceleration. Without it the frame rate may be very slow. On an M4 Macbook Air this app runs at around 60 FPS.
 
+The following instructions are the same for both Mac and Windows. 
+
 ```
 
 You need to have the following installed:
-- Ollama with the qwen3.5:9b downloaded (optional, only required if not using OpenRouter)
+- Optional: Ollama with the qwen3.5:9b (6.6 GB) downloaded (only required if not using OpenRouter)
 - UV package manager
 
 - Download the project folder and unzip

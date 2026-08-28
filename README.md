@@ -43,7 +43,16 @@ https://github.com/vbookshelf/mixamo-vrm-characters
 
 <br>
 
-## How this works
+## How this app works
+
+- The 3D world is built using three.js
+- The vrm characters (x-bot and y-bot) are loaded into this world
+- This is a standard flask app - python backend with a web based (html, css) frontend
+- Y-bot is manually controlled by the user
+- X-bot is controlled by an AI model served either via Ollama running locally (qwen3.5:9b) or via OpenRouter (qwen3.5-flash-02-23)
+- When the user gives instructions to x-bot, function calls are used to execute those instructions (run, walk, sit etc.)
+
+<br>
 
 ## How to run the app
 

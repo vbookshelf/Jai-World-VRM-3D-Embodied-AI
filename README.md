@@ -31,6 +31,18 @@ Three.js + HTML + CSS + JS + Flask + Ollama/OpenRouter
 
 <br>
 
+## What is a vrm character?
+A vrm character is a 3D virtual avatar saved in a universal file format (.vrm) that can be easily moved and used across different games, virtual reality platforms, and streaming software.
+
+Think of it like an MP3 file for 3D models. Just as an MP3 plays on any audio device, a VRM file standardizes a character's skeleton, facial expressions, and textures so you don't have to rebuild, re-texture, or re-rig the avatar every time you switch to a new virtual world.
+
+I like to think of a vrm character as a robot that exposes an API - you can use code to move the joints and limbs.
+
+Pre-built vrm characters can be downloaded from the web. The characters used in this app were downloaded from Mixamo.com in .fbx format. They were then converted to .vrm format. The conversion process is explained here:<br>
+https://github.com/vbookshelf/mixamo-vrm-characters
+
+<br>
+
 ## How this works
 
 ## How to run the app

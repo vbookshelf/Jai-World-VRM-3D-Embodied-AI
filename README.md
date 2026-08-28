@@ -17,7 +17,7 @@ Three.js + HTML + CSS + JS + Flask + Ollama/OpenRouter
 <br>
 
 <img src="images/image1.png" alt="Screenshot showing x-bot and y-bot" height="500">
-<p>X-bot (left) and Y-bot</p>
+<p>X-bot (left) and Y-bot (user controlled)</p>
 
 <br>
 

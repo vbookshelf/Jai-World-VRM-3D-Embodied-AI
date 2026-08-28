@@ -153,6 +153,7 @@ If using Ollama:
 ## Notes
 - Model reasoning is currently turned off. You can turn it on to improve performance, but this will also increase latency.
 - I suggest testing bot the Ollama and OpenRouter versions. There's a real difference in latency and intelligence. Seeing this will help you build intuition regarding differences between small and large models.
+- Qwen3.5-Flash cost -> In: $0.065 per 1M,  Out: $0.26 per 1M 
 
 <br>
 

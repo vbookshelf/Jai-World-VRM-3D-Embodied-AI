@@ -169,4 +169,9 @@ https://huggingface.co/datasets/vbookshelf/Juru-Lab-Agent-Sandbox-HYA
 
 ## Versions
 
+Version 1.0<br>
+28-August-2026<br>
+First release.
+
+
 <br>

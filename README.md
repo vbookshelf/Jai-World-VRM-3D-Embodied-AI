@@ -153,6 +153,19 @@ If using Ollama:
 <br>
 
 ## References
+- Mixamo vrm Characters<br>
+https://github.com/vbookshelf/mixamo-vrm-characters
+
+- Mixamo<br>
+https://www.mixamo.com/
+
+- Mixamo licensing conditions:<br>
+https://community.adobe.com/questions-696/mixamo-faq-licensing-royalties-ownership-eula-and-tos-589400
+
+- Juru Lab Agent Sandbox<br>
+https://huggingface.co/datasets/vbookshelf/Juru-Lab-Agent-Sandbox-HYA
+
+<br>
 
 ## Versions
 

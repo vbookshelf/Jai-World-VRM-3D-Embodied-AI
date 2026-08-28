@@ -155,7 +155,8 @@ If using Ollama:
 ## Notes
 - Model reasoning is currently turned off. You can turn it on to improve performance, but this will also increase latency.
 - I suggest testing bot the Ollama and OpenRouter versions. There's a real difference in latency and intelligence. Seeing this will help you build intuition regarding differences between small and large models.
-- Qwen3.5-Flash cost on OpenRouter -> In: $0.065 per 1M,  Out: $0.26 per 1M 
+- Qwen3.5-Flash cost on OpenRouter -> In: $0.065 per 1M,  Out: $0.26 per 1M
+- I used Qwen3.8-Max (free version) to generate the three.js 3D world. After that all vibe coding was done using Claude Sonnet 5.0 Medium (free version).
 
 <br>
 

@@ -119,6 +119,7 @@ If using OpenRouter:
 - Terminal: uv run python openrouter-app.py
 
 If using Ollama:
+- Ensure that Ollama is running.
 - Terminal: uv run python ollama-app.py
 
 ```

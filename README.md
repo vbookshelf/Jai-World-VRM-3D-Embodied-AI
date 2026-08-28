@@ -129,6 +129,8 @@ tool_call: get_status({})
 
 This app uses procedural movement. This meaans that the code calculates body movements and limb positions in real-time using math and runtime data like speed and direction. In contrast, pre-made animations use fixed, pre-recorded sequences. On Mixamo.com you can explore applying pre-made animations to different characters.
 
+The Rumba dance routine is a mixamo animation.
+
 <br>
 
 ## Y-bot controls
@@ -145,12 +147,14 @@ This app uses procedural movement. This meaans that the code calculates body mov
 - When walking together either x-bot or y-bot can take control.
 - If x-bot joins y-bot, then the arrow keys or WASD keys will move both bots. Click F to disconnect.
 - Click F to attach y-bot to x-bot. Then when x-bot moves y-bot will move automatically. Click F to disconnect. You can also click F to run to and join x-bot when it's already moving.
+- If x-bot is dancing, also click F to join in. 
 
 
 ## X-bot capabilities
 - Behave like an AI assistant.
 - Explore by going to the named locations (Location-1, Location-2 etc.)
 - Pick up, move and stack blocks.
+- Dance the Rumba.
 - If you need more info on any app capabilities try asking X-bot what it can do.
 
 <br>

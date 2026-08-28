@@ -37,7 +37,32 @@ Three.js + HTML + CSS + JS + Flask + Ollama/OpenRouter
 
 <br>
 
+<br>
 
+## How to run this app
+
+To render the 3D graphics at a high frame rate your computer needs to have graphics acceleration. Without it the frame rate may be very slow. On an M4 Macbook Air this app runs at around 60 FPS.
+
+```
+
+You need to have the following installed:
+- Ollama with the qwen3.5:9b downloaded (optional, only required if not using OpenRouter)
+- UV package manager
+
+- Download the project folder and unzip
+- Cd into the project folder
+- Terminal: uv sync
+
+If using OpenRouter:
+- Open the my-api-keys.env.txt file and paste in your OpenRouter API Key.
+- Change the file name from my-api-keys.env.txt to my-api-keys.env
+- Terminal: uv run python openrouter-app.py
+
+If using Ollama:
+- Ensure that Ollama is running.
+- Terminal: uv run python ollama-app.py
+
+```
 ## What is a vrm character?
 A vrm character is a 3D virtual avatar saved in a universal file format (.vrm) that can be easily moved and used across different games, virtual reality platforms, and streaming software.
 
@@ -97,34 +122,6 @@ tool_call: get_status({})
 ## Procedural Movement vs Pre-Made Animations
 
 This app uses procedural movement. This meaans that the code calculates body movements and limb positions in real-time using math and runtime data like speed and direction. In contrast, pre-made animations use fixed, pre-recorded sequences. On Mixamo.com you can explore applying pre-made animations to different characters.
-  
-
-<br>
-
-## How to run this app
-
-To render the 3D graphics at a high frame rate your computer needs to have graphics acceleration. Without it the frame rate may be very slow. On an M4 Macbook Air this app runs at around 60 FPS.
-
-```
-
-You need to have the following installed:
-- Ollama with the qwen3.5:9b downloaded (optional, only required if not using OpenRouter)
-- UV package manager
-
-- Download the project folder and unzip
-- Cd into the project folder
-- Terminal: uv sync
-
-If using OpenRouter:
-- Open the my-api-keys.env.txt file and paste in your OpenRouter API Key.
-- Change the file name from my-api-keys.env.txt to my-api-keys.env
-- Terminal: uv run python openrouter-app.py
-
-If using Ollama:
-- Ensure that Ollama is running.
-- Terminal: uv run python ollama-app.py
-
-```
 
 <br>
 

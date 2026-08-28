@@ -157,7 +157,6 @@ The Rumba dance routine is a mixamo animation.
 - Click F to attach y-bot to x-bot. Then when x-bot moves y-bot will move automatically. Click F to disconnect. You can also click F to run to and join x-bot when it's already moving.
 - If x-bot is dancing, also click F to join in. 
 
-
 ## X-bot capabilities
 - Behave like an AI assistant.
 - Explore by going to the named locations (Location-1, Location-2 etc.)

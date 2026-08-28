@@ -37,8 +37,6 @@ Three.js + HTML + CSS + JS + Flask + Ollama/OpenRouter
 
 <br>
 
-<br>
-
 ## How to run this app
 
 To render the 3D graphics at a high frame rate your computer needs to have graphics acceleration. Without it the frame rate may be very slow. On an M4 Macbook Air this app runs at around 60 FPS.
@@ -63,6 +61,9 @@ If using Ollama:
 - Terminal: uv run python ollama-app.py
 
 ```
+
+<br>
+
 ## What is a vrm character?
 A vrm character is a 3D virtual avatar saved in a universal file format (.vrm) that can be easily moved and used across different games, virtual reality platforms, and streaming software.
 

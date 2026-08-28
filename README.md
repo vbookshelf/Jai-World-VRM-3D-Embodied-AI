@@ -125,9 +125,6 @@ If using Ollama:
 - Alt+S or Option+S to sit down.
 - Tank controls are enabled by default. To turn them off click the button in the top left. Then you can move the camera around freely.
 
-
-<br>
-
 ## Walking together
 - This capability is useful for "AI as a virtual tour guide" applications.
 - When walking together either x-bot or y-bot can take control.

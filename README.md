@@ -31,6 +31,12 @@ Three.js + HTML + CSS + JS + Flask + Ollama/OpenRouter
 
 <br>
 
+<img src="images/image5.png" alt="Screenshot showing x-bot and y-bot walking side by side" height="500">
+<p>"Walking together" feature</p>
+
+<br>
+
+
 ## What is a vrm character?
 A vrm character is a 3D virtual avatar saved in a universal file format (.vrm) that can be easily moved and used across different games, virtual reality platforms, and streaming software.
 

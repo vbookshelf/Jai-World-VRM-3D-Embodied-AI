@@ -91,8 +91,11 @@ tool_call: get_status({})
 - X-bot is vision capable. It can call a look_around tool that returns a composite image with four views - front, rear, left, right. Imagine four cameras located on X-bot's head. Each time a new image is captured, the previous image is removed from the chat history.<br>
   <img src="images/image4.png" alt="Image showing the 4 views that x-bot sees" height="400">
 
+<br>
 
-  
+## Procedural Movement vs Pre-Made Animations
+
+This app uses procedural movement. This meaans that the code calculates body movements and limb positions in real-time using math and runtime data like speed and direction. In contrast, pre-made animations use fixed, pre-recorded sequences. On Mixamo.com you can explore applying pre-made animations to different characters.
   
 
 <br>

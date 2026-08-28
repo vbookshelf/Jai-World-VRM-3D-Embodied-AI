@@ -93,6 +93,29 @@ tool_call: get_status({})
 
 ## How to run the app
 
+To render the 3D graphics at a high frame rate your computer needs to have graphics acceleration. Without it the frame rate may be very slow.
+
+```
+
+You need to have the following installed:
+- Ollama with the qwen3.5:9b downloaded (optional, only required if not using OpenRouter)
+- UV package manager
+
+- Download the project folder and unzip
+- Cd into the project folder
+- Terminal: uv sync
+
+If using OpenRouter:
+- Open the openrouter-app.py file and paste in your OpenRouter API key
+- Terminal: uv run python openrouter-app.py
+
+If using Ollama:
+- Terminal: uv run python ollama-app.py
+
+```
+
+
+
 ## Y-bot controls
 
 ## Walking together

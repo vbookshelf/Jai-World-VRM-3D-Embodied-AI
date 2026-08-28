@@ -250,6 +250,7 @@ Keep replies brief — this is a live conversation in a game world, not an essay
 - I suggest testing bot the Ollama and OpenRouter versions. There's a real difference in latency and intelligence. Seeing this will help you build intuition regarding differences between small and large models.
 - Qwen3.5-Flash cost on OpenRouter -> In: $0.065 per 1M,  Out: $0.26 per 1M
 - I used Qwen3.8-Max (free version) to generate the three.js 3D world. After that all vibe coding was done using Claude Sonnet 5.0 Medium (free version).
+- Streaming is turned on by default in both the Ollama and OpenRouter apps. When models are changed, check that streaming doesn't introduce instability.
 
 <br>
 

@@ -122,17 +122,32 @@ If using Ollama:
 - Press the space bar to take off and fly.
 - Press the down arrow key to land.
 - When swimming under water, press the space bar to go up.
+- Alt+S or Option+S to sit down.
 - Tank controls are enabled by default. To turn them off click the button in the top left. Then you can move the camera around freely.
+
 
 <br>
 
 ## Walking together
+- This capability is useful for "AI as a virtual tour guide" applications.
+- When walking together either x-bot or y-bot can take control.
+- If x-bot joins y-bot, then the arrow keys or WASD keys will move both bots. Click F to disconnect.
+- Click F to attach y-bot to x-bot. Then when x-bot moves y-bot will move automatically. Click F to disconnect. You can also click F to run to and join x-bot when it's already moving.
+
 
 ## X-bot capabilities
+- Behave like an AI assistant.
+- Explore by going to the named locations (Location-1, Location-2 etc.)
+- Pick up, move and stack blocks.
+- If you need more info on any app capabilities try asking X-bot what it can do.
+
+<br>
 
 ## Notes
 - Model reasoning is currently turned off. You can turn it on to improve performance, but this will also increase latency.
 - I suggest testing bot the Ollama and OpenRouter versions. There's a real difference in latency and intelligence. Seeing this will help you build intuition regarding differences between small and large models.
+
+<br>
 
 ## References
 

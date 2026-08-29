@@ -45,7 +45,7 @@ https://www.youtube.com/watch?v=5ihb6zhLim8
 <br>
 
 <img src="images/image6.png" alt="Screenshot showing x-bot and y-bot dancing" height="500">
-<p>"Dancing" feature</p>
+<p>Dance with your AI assistant</p>
 
 <br>
 

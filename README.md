@@ -64,7 +64,7 @@ You need to have the following installed:
 
 - Download the project folder and unzip
 - Cd into the project folder
-- Set up the uv environment:
+- Set up the uv environment by tyoing this terminal command:
   Terminal: uv sync
 
 If using OpenRouter:

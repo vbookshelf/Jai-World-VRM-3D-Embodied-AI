@@ -72,6 +72,7 @@ If using OpenRouter:
   Mac Terminal: mv my-api-keys.env.txt my-api-keys.env
   Windows DOS: ren my-api-keys.env.txt my-api-keys.env
   Windows Powershell: Rename-Item -Path "my-api-keys.env.txt" -NewName "my-api-keys.env"
+  (On macOS, trying to rename a .env file manually does not work.)
 - Launch the app:
   Terminal: uv run python openrouter-app.py
 

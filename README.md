@@ -185,6 +185,7 @@ The Rumba dance routine uses a pre-made mixamo animation.
 - Qwen3.5-Flash cost on OpenRouter -> In: $0.065 per 1M,  Out: $0.26 per 1M
 - I used Qwen3.8-Max (free version) to generate the three.js 3D world. After that all vibe coding was done using Claude Sonnet 5.0 Medium (free version).
 - Streaming is turned on by default in both the Ollama and OpenRouter apps. When models are changed, check that streaming doesn't introduce instability.
+- The api_move_arrived logic successfully solves the classic "Embodied AI" problem where an LLM assumes it has arrived somewhere before the animation finishes.
 
 <br>
 

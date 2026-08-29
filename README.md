@@ -68,12 +68,17 @@ You need to have the following installed:
 
 If using OpenRouter:
 - Open the my-api-keys.env.txt file and paste in your OpenRouter API Key.
-- Change the file name from my-api-keys.env.txt to my-api-keys.env
-- Terminal: uv run python openrouter-app.py
+- Use the terminal to change the file name from my-api-keys.env.txt to my-api-keys.env:
+  Mac Terminal: mv my-api-keys.env.txt my-api-keys.env
+  Windows DOS: ren my-api-keys.env.txt my-api-keys.env
+  Windows Powershell: Rename-Item -Path "my-api-keys.env.txt" -NewName "my-api-keys.env"
+- Launch the app:
+  Terminal: uv run python openrouter-app.py
 
 If using Ollama:
 - Ensure that Ollama is running.
-- Terminal: uv run python ollama-app.py
+- Launch the app:
+  Terminal: uv run python ollama-app.py
 
 - The app will open in your browser.
 

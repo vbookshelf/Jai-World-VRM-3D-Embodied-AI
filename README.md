@@ -64,8 +64,8 @@ You need to have the following installed:
 
 - Download the project folder and unzip
 - Cd into the project folder
-- Set up the uv environment by tyoing this terminal command:
-  Terminal: uv sync
+- Type this command into the terminal:
+  uv sync
 
 If using OpenRouter:
 - Open the my-api-keys.env.txt file and paste in your OpenRouter API Key.
@@ -74,13 +74,13 @@ If using OpenRouter:
   Windows DOS: ren my-api-keys.env.txt my-api-keys.env
   Windows Powershell: Rename-Item -Path "my-api-keys.env.txt" -NewName "my-api-keys.env"
   (On macOS, trying to rename a .env file manually does not work.)
-- Launch the app:
-  Terminal: uv run python openrouter-app.py
+- Type this command into the terminal to launch the app:
+  uv run python openrouter-app.py
 
 If using Ollama:
 - Ensure that Ollama is running.
-- Launch the app:
-  Terminal: uv run python ollama-app.py
+- Type this command into the terminal to launch the app:
+  uv run python ollama-app.py
 
 - The app will open in your browser.
 

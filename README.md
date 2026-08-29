@@ -54,8 +54,9 @@ The following instructions are the same for both Mac and Windows.
 ```
 
 You need to have the following installed:
-- Optional: Ollama with the qwen3.5:9b (6.6 GB) downloaded (only required if not using OpenRouter)
 - UV package manager
+- Optional: Ollama with the qwen3.5:9b (6.6 GB) downloaded. (Not required when using OpenRouter.)
+
 
 - Download the project folder and unzip
 - Cd into the project folder

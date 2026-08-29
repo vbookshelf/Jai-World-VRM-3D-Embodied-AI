@@ -148,10 +148,12 @@ The Rumba dance routine uses a pre-made mixamo animation.
 ## Y-bot controls
 
 - Use the arrow keys or WASD keys to move.
+- Step back: S
 - Press the space bar to take off and fly.
 - Press the down arrow key to land.
 - When swimming under water, press the space bar to go up.
-- Alt+S or Option+S to sit down.
+- Shift to sit down.
+- Run: Shift + Direction keys
 - Tank controls are enabled by default. To turn them off click the button in the top left. Then you can move the camera around freely.
 
 ## Walking together

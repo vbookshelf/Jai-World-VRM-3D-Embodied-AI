@@ -68,11 +68,11 @@ You need to have the following installed:
   uv sync
 
 If using OpenRouter:
-- Open the my-api-keys.env.txt file and paste in your OpenRouter API Key.
-- Use the terminal to change the file name from my-api-keys.env.txt to my-api-keys.env:
-  Mac Terminal: mv my-api-keys.env.txt my-api-keys.env
-  Windows DOS: ren my-api-keys.env.txt my-api-keys.env
-  Windows Powershell: Rename-Item -Path "my-api-keys.env.txt" -NewName "my-api-keys.env"
+- Open the my-api-key.env.txt file and paste in your OpenRouter API Key.
+- Use the terminal to change the file name from my-api-key.env.txt to my-api-key.env:
+  Mac Terminal: mv my-api-key.env.txt my-api-key.env
+  Windows DOS: ren my-api-key.env.txt my-api-key.env
+  Windows Powershell: Rename-Item -Path "my-api-key.env.txt" -NewName "my-api-key.env"
   (On macOS, trying to rename a .env file manually does not work.)
 - Type this command into the terminal to launch the app:
   uv run python openrouter-app.py

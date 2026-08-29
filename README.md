@@ -183,7 +183,7 @@ The Rumba dance routine uses a pre-made mixamo animation.
 - Model reasoning is currently turned off. You can turn it on to improve performance, but this will also increase latency.
 - I suggest testing bot the Ollama and OpenRouter versions. There's a real difference in latency and intelligence. Seeing this will help you build intuition regarding differences between small and large models.
 - Qwen3.5-Flash cost on OpenRouter -> In: $0.065 per 1M,  Out: $0.26 per 1M
-- I used Qwen3.8-Max (free version) to generate the three.js 3D world. After that all vibe coding was done using Claude Sonnet 5.0 Medium (free version).
+- I used Qwen3.8-Max (free version) to generate the three.js 3D world. After that all vibe coding was done using Claude Sonnet 5.0 Medium (free version). Used Gemnini Pro to check the finished code.
 - Streaming is turned on by default in both the Ollama and OpenRouter apps. When models are changed, check that streaming doesn't introduce instability.
 - The api_move_arrived logic successfully solves the classic "Embodied AI" problem where an LLM assumes it has arrived somewhere before the animation finishes.
 

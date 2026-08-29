@@ -200,7 +200,7 @@ https://community.adobe.com/questions-696/mixamo-faq-licensing-royalties-ownersh
 ## Versions
 
 Version 1.0<br>
-28-August-2026<br>
+31-August-2026<br>
 First release.
 
 

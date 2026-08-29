@@ -71,7 +71,6 @@ If using Ollama:
 - Terminal: uv run python ollama-app.py
 
 - The app will open in your browser.
-- If using Ollama there will be a slight delay before the first chat response because the model has to load.
 
 ```
 

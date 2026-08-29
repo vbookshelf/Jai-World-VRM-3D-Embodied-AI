@@ -64,7 +64,8 @@ You need to have the following installed:
 
 - Download the project folder and unzip
 - Cd into the project folder
-- Terminal: uv sync
+- Set up the uv environment:
+  Terminal: uv sync
 
 If using OpenRouter:
 - Open the my-api-keys.env.txt file and paste in your OpenRouter API Key.

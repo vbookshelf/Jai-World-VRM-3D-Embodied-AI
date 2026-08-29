@@ -41,7 +41,7 @@ Tech stack: Three.js + HTML + CSS + JS + Flask + Ollama/OpenRouter
 <br>
 
 <img src="images/image6.png" alt="Screenshot showing x-bot and y-bot dancing" height="500">
-<p>Dancing</p>
+<p>"Dancing" feature</p>
 
 <br>
 

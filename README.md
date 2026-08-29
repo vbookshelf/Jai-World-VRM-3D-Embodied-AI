@@ -136,7 +136,7 @@ tool_call: get_status({})
 
 This app uses procedural movement. This meaans that the code calculates body movements and limb positions in real-time using math and runtime data like speed and direction. In contrast, pre-made animations use fixed, pre-recorded sequences. On Mixamo.com you can explore applying pre-made animations to different characters.
 
-The Rumba dance routine is a mixamo animation.
+The Rumba dance routine uses a pre-made mixamo animation.
 
 <br>
 

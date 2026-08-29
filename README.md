@@ -5,6 +5,9 @@ This project explores personalized 3D world generation, embodied AI, AI spatial 
 
 Tech stack: Three.js + HTML + CSS + JS + Flask + Ollama/OpenRouter
 
+YouTube Video Demo:<br>
+https://www.youtube.com/watch?v=5ihb6zhLim8
+
 <br>
 
 <img src="images/image1.png" alt="Screenshot showing x-bot and y-bot" height="500">

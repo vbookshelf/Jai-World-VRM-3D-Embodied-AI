@@ -168,7 +168,7 @@ The Rumba dance routine uses a pre-made mixamo animation.
 ## Exploration setup
 - The world includes 5 numbered locations.
 - X-bot can only access location info only when it's within 2m of a numbered location. It acesses location info by calling the get_info tool. For example, Location-2 is a seaside cafe.
-- This controlled disclosure of information about the world encourages exploration.
+- This controlled disclosure of world information encourages exploration.
 
 <br>
 
@@ -182,6 +182,10 @@ The Rumba dance routine uses a pre-made mixamo animation.
 <br>
 
 ## References
+
+- Juru Lab Agent Sandbox<br>
+https://huggingface.co/datasets/vbookshelf/Juru-Lab-Agent-Sandbox-HYA
+
 - Mixamo vrm Characters<br>
 https://github.com/vbookshelf/mixamo-vrm-characters
 
@@ -190,9 +194,6 @@ https://www.mixamo.com/
 
 - Mixamo licensing conditions:<br>
 https://community.adobe.com/questions-696/mixamo-faq-licensing-royalties-ownership-eula-and-tos-589400
-
-- Juru Lab Agent Sandbox<br>
-https://huggingface.co/datasets/vbookshelf/Juru-Lab-Agent-Sandbox-HYA
 
 <br>
 

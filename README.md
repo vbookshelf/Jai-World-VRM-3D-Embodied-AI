@@ -1,5 +1,5 @@
 # Jai World 3D VRM Embodied AI
-Interact with your VRM Embodied agent in a 3D virtual world. A desktop folder-based Flask app that supports both Ollama and OpenRouter.
+Interact with your vrm embodied agent in a 3D virtual world. A desktop folder-based Flask app that supports both Ollama and OpenRouter.
 
 This project explores personalized 3D world generation, embodied AI, AI spatial navigation, and virtual character interaction.
 

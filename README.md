@@ -211,6 +211,9 @@ https://www.mixamo.com/
 - Mixamo licensing conditions:<br>
 https://community.adobe.com/questions-696/mixamo-faq-licensing-royalties-ownership-eula-and-tos-589400
 
+- Messenger 3D game built with three.js<br>
+  https://messenger.abeto.co/
+
 <br>
 
 ## Versions

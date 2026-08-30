@@ -86,6 +86,8 @@ If using Ollama:
 
 ```
 
+When using Ollama, there will be a short delay before the first response while the model loads. Subsequent responses will be faster.
+
 <br>
 
 ## What is a vrm character?

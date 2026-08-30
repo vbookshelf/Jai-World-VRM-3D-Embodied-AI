@@ -63,7 +63,7 @@ You need to have the following installed:
 
 
 - Download the project folder and unzip
-- Cd into the project folder
+- Cd into the Jai-World-v1.0 folder
 - Type this command into the terminal:
   uv sync
 

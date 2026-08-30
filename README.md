@@ -68,7 +68,7 @@ You need to have the following installed:
   uv sync
 
 If using OpenRouter:
-- Open the my-api-key.env.txt file and paste in your OpenRouter API Key.
+- Open the my-api-key.env.txt file and replace YOUR-API-KEY with your OpenRouter API Key.
 - Use the terminal to change the file name from my-api-key.env.txt to my-api-key.env:
   Mac Terminal: mv my-api-key.env.txt my-api-key.env
   Windows DOS: ren my-api-key.env.txt my-api-key.env

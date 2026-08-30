@@ -95,7 +95,7 @@ Think of it like an MP3 file for 3D models. Just as an MP3 plays on any audio de
 
 I like to think of a vrm character as a robot that exposes an API - you can use code to move the joints and limbs.
 
-Pre-built vrm characters can be downloaded from the web. The characters used in this app were downloaded from Mixamo.com in .fbx format. They were then converted to .vrm format. The conversion process is explained here:<br>
+Pre-built vrm characters can be downloaded from the web. The characters used in this app were downloaded from Mixamo.com in .fbx format. I converted them to .vrm format. The conversion process is explained here:<br>
 https://github.com/vbookshelf/mixamo-vrm-characters
 
 <br>

@@ -148,7 +148,7 @@ tool_call: get_status({})
 
 ## Procedural Movement vs Pre-Made Animations
 
-This app uses procedural movement. This meaans that the code calculates body movements and limb positions in real-time using math and runtime data like speed and direction. In contrast, pre-made animations use fixed, pre-recorded sequences. On Mixamo.com you can explore applying pre-made animations to different characters.
+This app uses procedural movement. This means that the code calculates body movements and limb positions in real-time using math and runtime data like speed and direction. In contrast, pre-made animations use fixed, pre-recorded sequences. On Mixamo.com you can explore applying pre-made animations to different characters.
 
 The dance feature in this app is a pre-made mixamo animation.
 

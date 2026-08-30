@@ -1,0 +1,13 @@
+[project]
+name = "Jai-World-VRM-Embodied-AI"
+version = "1.0"
+description = "Interact with your agent in a 3D world."
+requires-python = "==3.10.*"
+dependencies = [
+    "accelerate==1.10.1",
+    "dotenv==0.9.9",
+    "flask==3.1.2",
+    "ollama==0.5.4",
+    "openai==2.31.0",
+    "pillow==12.3.0",
+]

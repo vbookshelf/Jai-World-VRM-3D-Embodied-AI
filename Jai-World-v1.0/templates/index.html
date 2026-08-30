@@ -1,0 +1,3275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Jai World — VRM Embodied AI</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    background: #0a0a0f;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: #e8e8f0;
+  }
+  #canvas-container { position: fixed; inset: 0; }
+  canvas { display: block; width: 100%; height: 100%; }
+
+  .overlay { position: fixed; pointer-events: none; z-index: 10; }
+
+  #status-panel {
+    top: 60px; left: 16px;
+    background: rgba(15, 15, 25, 0.75);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 14px 18px;
+    min-width: 210px;
+    font-size: 12px;
+    line-height: 1.6;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  }
+  #status-panel .title {
+    font-size: 11px; font-weight: 600; letter-spacing: 1.2px;
+    text-transform: uppercase; color: #8a8aa8; margin-bottom: 8px;
+  }
+  #status-panel .row { display: flex; justify-content: space-between; padding: 2px 0; }
+  #status-panel .label { color: #9a9ab8; }
+  #status-panel .value { color: #e8e8f0; font-weight: 500; font-variant-numeric: tabular-nums; }
+  #status-panel .value.ok { color: #7ee787; }
+  #status-panel .value.warn { color: #f0b849; }
+  #status-panel .value.loading { color: #79c0ff; }
+
+  #status-panel.hidden { display: none; }
+
+  #top-left-controls {
+    top: 16px; left: 16px;
+    display: flex; gap: 8px;
+    pointer-events: auto;
+  }
+  .icon-btn {
+    width: 34px; height: 34px;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(15, 15, 25, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    color: #8a8aa8;
+    cursor: pointer;
+    pointer-events: auto;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+  .icon-btn:hover { color: #e8e8f0; background: rgba(30,30,50,0.75); }
+  .icon-btn svg { width: 17px; height: 17px; }
+  .icon-btn.active { color: #79c0ff; border-color: rgba(121,192,255,0.4); }
+  .icon-btn.cam-toggle-btn {
+    width: auto; padding: 0 10px 0 9px; gap: 5px;
+    font-size: 10.5px; font-weight: 700; letter-spacing: .03em;
+  }
+  #follow-cam-state { line-height: 1; }
+
+  .icon-btn[data-tooltip] { position: relative; }
+  .icon-btn[data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute; top: calc(100% + 8px); left: 0;
+    background: rgba(15,15,25,0.95);
+    color: #e8e8f0; padding: 5px 9px; border-radius: 6px;
+    font-size: 11px; font-weight: 500; letter-spacing: 0; white-space: nowrap;
+    border: 1px solid rgba(255,255,255,0.1);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+    opacity: 0; transform: translateY(-4px);
+    pointer-events: none; transition: opacity .15s ease, transform .15s ease;
+    z-index: 30;
+  }
+  .icon-btn[data-tooltip]:hover::after,
+  .icon-btn[data-tooltip]:focus-visible::after {
+    opacity: 1; transform: translateY(0);
+  }
+  /* For icon buttons anchored to the bottom of the screen, show the tooltip
+     above instead of below so it doesn't run off-screen. */
+  .icon-btn.tooltip-top[data-tooltip]::after {
+    top: auto; bottom: calc(100% + 8px); left: auto; right: 0;
+    transform: translateY(4px);
+  }
+  .icon-btn.tooltip-top[data-tooltip]:hover::after,
+  .icon-btn.tooltip-top[data-tooltip]:focus-visible::after {
+    transform: translateY(0);
+  }
+
+  #progress-bar { height: 3px; background: rgba(255,255,255,0.08); border-radius: 2px; margin-top: 10px; overflow: hidden; }
+  #progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg,#79c0ff,#a78bfa); border-radius: 2px; transition: width .2s ease; }
+
+  #hint {
+    top: 16px; left: 50%; transform: translateX(-50%);
+    background: rgba(15,15,25,0.7);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 99px;
+    padding: 9px 20px;
+    font-size: 12.5px;
+    letter-spacing: .04em;
+    color: rgba(232,232,240,0.85);
+    backdrop-filter: blur(10px);
+    white-space: nowrap;
+    transition: opacity 1s;
+  }
+  #hint.hide { opacity: 0; }
+
+  #coupling-hint {
+    top: 58px; left: 50%; transform: translateX(-50%);
+    background: rgba(15,15,25,0.7);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 99px;
+    padding: 9px 20px;
+    font-size: 12.5px;
+    letter-spacing: .04em;
+    color: rgba(232,232,240,0.85);
+    backdrop-filter: blur(10px);
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity .3s;
+  }
+  #coupling-hint.show { opacity: 1; }
+
+  .btn svg { width: 16px; height: 16px; }
+
+  #error-banner {
+    top: 68px; left: 50%; transform: translateX(-50%);
+    background: rgba(248,81,73,0.15);
+    border: 1px solid rgba(248,81,73,0.4);
+    color: #ffa198; padding: 10px 18px; border-radius: 10px;
+    font-size: 13px; max-width: 500px; text-align: center;
+    display: none; backdrop-filter: blur(12px);
+  }
+  #error-banner.visible { display: block; }
+
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .5; } }
+  .loading-indicator { animation: pulse 1.2s ease-in-out infinite; }
+
+  /* ─── Chat panel (talk to x-bot) — bottom-left, messages expanded by default ── */
+  #chat-panel {
+    bottom: 16px; left: 16px;
+    width: 340px;
+    max-width: calc(100vw - 32px);
+    background: rgba(15, 15, 25, 0.78);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+    display: flex; flex-direction: column;
+    pointer-events: auto;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    overflow: hidden;
+  }
+  #chat-expand {
+    display: flex; flex-direction: column;
+    max-height: 46vh;
+    overflow: hidden;
+    transition: max-height .22s ease, opacity .18s ease;
+  }
+  #chat-expand.collapsed { max-height: 0; opacity: 0; pointer-events: none; }
+  #chat-header {
+    padding: 12px 16px 8px;
+    font-size: 11px; font-weight: 600; letter-spacing: 1.2px;
+    text-transform: uppercase; color: #8a8aa8;
+    display: flex; justify-content: space-between; align-items: center;
+    flex-shrink: 0;
+  }
+  #chat-header .dot { width: 7px; height: 7px; border-radius: 50%; background: #7ee787; box-shadow: 0 0 6px #7ee787; margin-right: 6px; display: inline-block; }
+  #chat-reset { cursor: pointer; color: #6a6a88; font-size: 10px; text-transform: none; letter-spacing: 0; }
+  #chat-reset:hover { color: #e8e8f0; }
+  #chat-log {
+    overflow-y: auto; padding: 4px 14px 8px;
+    font-size: 12.5px; line-height: 1.5; max-height: 30vh;
+  }
+  #chat-log::-webkit-scrollbar { width: 6px; }
+  #chat-log::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 3px; }
+  .chat-msg { margin-bottom: 10px; }
+  .chat-msg .who { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 2px; }
+  .chat-msg.user .who { color: #79c0ff; }
+  .chat-msg.bot .who { color: #a78bfa; }
+  .chat-msg.sys .who { color: #f0b849; }
+  .chat-msg .text { color: #e8e8f0; }
+  .chat-msg.sys .text { color: #c9c9dd; font-style: italic; }
+  #chat-form {
+    display: flex; gap: 6px; padding: 10px 12px;
+    flex-shrink: 0;
+  }
+  #chat-expand:not(.collapsed) + #chat-form { border-top: 1px solid rgba(255,255,255,0.08); }
+  #chat-toggle {
+    flex-shrink: 0; width: 34px; height: 34px;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px; color: #b8b8d0; cursor: pointer; position: relative;
+  }
+  #chat-toggle:hover { color: #e8e8f0; background: rgba(255,255,255,0.12); }
+  #chat-toggle svg { width: 15px; height: 15px; transition: transform .2s ease; }
+  #chat-toggle.expanded svg { transform: rotate(180deg); }
+  #chat-unread-dot {
+    display: none;
+    position: absolute; top: 5px; right: 5px;
+    width: 7px; height: 7px; border-radius: 50%;
+    background: #a78bfa; box-shadow: 0 0 6px #a78bfa;
+  }
+  #chat-unread-dot.visible { display: block; }
+  #chat-input {
+    flex: 1; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px; color: #e8e8f0; padding: 8px 10px; font-size: 12.5px; outline: none;
+    font-family: inherit;
+  }
+  #chat-input:focus { border-color: rgba(167,139,250,0.5); }
+  #chat-send {
+    display: none; /* hidden, not removed — Enter-to-submit is the only path
+                       used in practice, but the button stays in the DOM so
+                       the form still has a submit control (implicit
+                       submission on Enter relies on one being present, just
+                       not necessarily visible) and so it's easy to re-show
+                       later if needed. */
+    background: rgba(167,139,250,0.25); border: 1px solid rgba(167,139,250,0.4);
+    color: #e8e8f0; border-radius: 8px; padding: 8px 14px; font-size: 12.5px;
+    cursor: pointer; font-weight: 500;
+  }
+  #chat-send:hover { background: rgba(167,139,250,0.4); }
+  #chat-send:disabled { opacity: 0.5; cursor: default; }
+  #chat-quicklinks { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 14px 10px; flex-shrink: 0; }
+  .quick-btn {
+    font-size: 10.5px; padding: 4px 8px; border-radius: 99px;
+    background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+    color: #b8b8d0; cursor: pointer;
+  }
+  .quick-btn:hover { background: rgba(255,255,255,0.12); color: #e8e8f0; }
+
+  /* ─── Dev console (overlay, slides in from the right) ───────────────── */
+  #dev-console-toggle {
+    position: fixed; /* .icon-btn[data-tooltip] has higher specificity than .overlay
+                         and would otherwise override this back to 'relative' */
+    bottom: 16px; right: 16px;
+  }
+  #dev-console-toggle.active { color: #79c0ff; border-color: rgba(121,192,255,0.4); }
+
+  #dev-console {
+    top: 0; right: 0; bottom: 0;
+    width: 440px;
+    max-width: 92vw;
+    background: rgba(10, 10, 18, 0.94);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-left: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex; flex-direction: column;
+    pointer-events: auto;
+    transform: translateX(100%);
+    transition: transform .25s ease;
+  }
+  #dev-console.open { transform: translateX(0); }
+
+  #dev-console-header {
+    padding: 16px 18px 12px;
+    display: flex; justify-content: space-between; align-items: baseline;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    flex-shrink: 0;
+  }
+  #dev-console-header span:first-child {
+    font-size: 12px; font-weight: 700; letter-spacing: 1.2px;
+    text-transform: uppercase; color: #e8e8f0;
+  }
+  #dev-console-sub { font-size: 10.5px; color: #6a6a88; }
+
+  #dev-console-log {
+    flex: 1; overflow-y: auto; padding: 14px 16px 24px;
+    font-family: "SF Mono", "Fira Code", Menlo, Consolas, monospace;
+    font-size: 11.5px; line-height: 1.55; color: #c9c9dd;
+  }
+  #dev-console-log::-webkit-scrollbar { width: 7px; }
+  #dev-console-log::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 4px; }
+
+  .console-empty { color: #5a5a72; font-style: italic; }
+
+  .console-turn { margin-bottom: 18px; padding-bottom: 16px; border-bottom: 1px dashed rgba(255,255,255,0.1); }
+  .console-turn:last-child { border-bottom: none; margin-bottom: 0; }
+  .console-turn-label {
+    font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em;
+    color: #79c0ff; margin-bottom: 8px;
+  }
+  .console-line-user { color: #e8e8f0; margin-bottom: 8px; word-break: break-word; }
+  .console-line-user .prefix { color: #79c0ff; margin-right: 4px; }
+
+  .console-line-status { color: #5a5a72; margin-bottom: 8px; word-break: break-word; font-size: 11px; }
+
+  .console-step { margin: 8px 0; padding-left: 10px; border-left: 2px solid rgba(255,255,255,0.12); }
+  .console-step-call { color: #f0b849; margin-bottom: 3px; word-break: break-word; }
+  .console-step pre {
+    margin: 0; padding: 6px 9px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 6px;
+    white-space: pre-wrap; word-break: break-word;
+    font-family: inherit; font-size: 11px;
+  }
+  .console-step pre.ok { color: #7ee787; }
+  .console-step pre.err { color: #ff7b72; }
+
+  .console-reply { color: #a78bfa; margin-top: 10px; word-break: break-word; }
+  .console-reply .prefix { color: #a78bfa; margin-right: 4px; font-weight: 700; }
+
+
+  /* Floating name-tag / speech-bubble sprites are drawn on canvas textures,
+     not DOM — no CSS needed for them. */
+</style>
+</head>
+<body>
+  <div id="canvas-container"></div>
+
+  <div id="top-left-controls" class="overlay">
+    <div id="diagnostics-toggle" class="icon-btn" data-tooltip="Show diagnostics" aria-label="Show diagnostics">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+      </svg>
+    </div>
+    <button class="icon-btn" id="reset-cam-btn" data-tooltip="Reset Camera" aria-label="Reset Camera">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>
+      </svg>
+    </button>
+    <button class="icon-btn cam-toggle-btn active" id="follow-cam-btn" data-tooltip="Tank Controls" aria-label="Tank Controls">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="8" r="3"/><path d="M6 21v-2a6 6 0 0 1 12 0v2"/>
+      </svg>
+      <span id="follow-cam-state">ON</span>
+    </button>
+  </div>
+
+  <div id="status-panel" class="overlay hidden">
+    <div class="title">Diagnostics</div>
+    <div class="row"><span class="label">Status</span><span id="status-value" class="value loading loading-indicator">Initializing…</span></div>
+    <div class="row"><span class="label">FPS</span><span id="fps-value" class="value">—</span></div>
+    <div class="row"><span class="label">Model</span><span id="model-value" class="value">—</span></div>
+    <div class="row"><span class="label">Position</span><span id="pos-value" class="value">—</span></div>
+    <div class="row"><span class="label">Speed</span><span id="speed-value" class="value">—</span></div>
+    <div id="progress-bar"><div id="progress-fill"></div></div>
+  </div>
+
+  <div id="hint" class="overlay">W / ↑ forward · S back · A/D / ←→ turn · hold Shift + move to run · tap Shift to sit/stand · Space ascend/surface · ↓ / C descend/dive</div>
+  <div id="coupling-hint" class="overlay"></div>
+  <div id="error-banner" class="overlay"></div>
+
+  <div id="chat-panel" class="overlay">
+    <div id="chat-expand">
+      <div id="chat-header"><span><span class="dot"></span>Talk to x-bot</span><span id="chat-reset">reset</span></div>
+      <div id="chat-log"></div>
+      <div id="chat-quicklinks">
+        <span class="quick-btn" data-msg="Hello!">Hello</span>
+        <span class="quick-btn" data-msg="Walk to Location-1 and tell me where you are.">Walk to L1</span>
+        <span class="quick-btn" data-msg="Run to Location-3.">Run to L3</span>
+        <span class="quick-btn" data-msg="Where are you now?">Where are you?</span>
+        <span class="quick-btn" data-msg="Come over to me, then sit down and wave.">Come here &amp; sit</span>
+        <span class="quick-btn" data-msg="Come give me a hug!">Give me a hug</span>
+        <span class="quick-btn" data-msg="Let's take a walk.">Let's take a walk</span>
+      </div>
+    </div>
+    <form id="chat-form">
+      <button type="button" id="chat-toggle" class="expanded" title="Hide messages">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="18 15 12 9 6 15"/>
+        </svg>
+        <span id="chat-unread-dot"></span>
+      </button>
+      <input id="chat-input" type="text" placeholder="Talk to x-bot… e.g. Walk to Location-2" autocomplete="off" />
+      <button id="chat-send" type="submit">Send</button>
+    </form>
+  </div>
+
+  <button id="dev-console-toggle" class="icon-btn overlay tooltip-top" data-tooltip="Dev Console" aria-label="Show dev console">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/>
+    </svg>
+  </button>
+
+  <div id="dev-console" class="overlay">
+    <div id="dev-console-header">
+      <span>Dev Console</span>
+      <span id="dev-console-sub">last 3 turns</span>
+    </div>
+    <div id="dev-console-log"></div>
+  </div>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/",
+      "@pixiv/three-vrm": "https://cdn.jsdelivr.net/npm/@pixiv/three-vrm@3.0.0/lib/three-vrm.module.js"
+    }
+  }
+  </script>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+    import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { VRMLoaderPlugin, VRMUtils } from '@pixiv/three-vrm';
+
+    // ─────────────────────────────────────────────
+    // DOM
+    // ─────────────────────────────────────────────
+    const container = document.getElementById('canvas-container');
+    const statusValue = document.getElementById('status-value');
+    const fpsValue = document.getElementById('fps-value');
+    const modelValue = document.getElementById('model-value');
+    const posValue = document.getElementById('pos-value');
+    const speedValue = document.getElementById('speed-value');
+    const progressFill = document.getElementById('progress-fill');
+    const errorBanner = document.getElementById('error-banner');
+    const resetCamBtn = document.getElementById('reset-cam-btn');
+    const followCamBtn = document.getElementById('follow-cam-btn');
+    const followCamState = document.getElementById('follow-cam-state');
+    const hintEl = document.getElementById('hint');
+    const couplingHintEl = document.getElementById('coupling-hint');
+    const chatLog = document.getElementById('chat-log');
+    const chatForm = document.getElementById('chat-form');
+    const chatInput = document.getElementById('chat-input');
+    const chatSend = document.getElementById('chat-send');
+    const chatReset = document.getElementById('chat-reset');
+    const chatExpand = document.getElementById('chat-expand');
+    const chatToggle = document.getElementById('chat-toggle');
+    const chatUnreadDot = document.getElementById('chat-unread-dot');
+    const chatQuicklinks = document.getElementById('chat-quicklinks');
+    const diagnosticsToggle = document.getElementById('diagnostics-toggle');
+    const devConsoleToggle = document.getElementById('dev-console-toggle');
+    const devConsole = document.getElementById('dev-console');
+    const devConsoleLog = document.getElementById('dev-console-log');
+    const statusPanel = document.getElementById('status-panel');
+
+    // ─────────────────────────────────────────────
+    // Named locations (kept in sync with LOCATIONS in app.py)
+    // ─────────────────────────────────────────────
+    const LOCATIONS = {
+      'Location-1': { x: 16.5, z: -14.3 },
+      'Location-2': { x: -4.9, z: 15.1 },
+      'Location-3': { x: -7.7, z: -23.8 },
+      'Location-4': { x: 20.1, z: 8.0 },
+      'Location-5': { x: 22.2, z: -25.9 },
+    };
+
+    // ─────────────────────────────────────────────
+    // Renderer / Scene / Camera
+    // ─────────────────────────────────────────────
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.1;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    container.appendChild(renderer.domElement);
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x9fc7e8);
+    scene.fog = new THREE.Fog(0x9fc7e8, 30, 90);
+
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 200);
+    camera.position.set(0, 2.2, -5.5);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.target.set(0, 1.1, 0);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.08;
+    controls.minDistance = 1.5;
+    controls.maxDistance = 12;
+    controls.maxPolarAngle = Math.PI * 0.49;
+    controls.update();
+
+    const DEFAULT_CAM_OFFSET = camera.position.clone().sub(controls.target);
+
+    // ─────────────────────────────────────────────
+    // x-bot vision: an offscreen camera/renderer x-bot's "eyes" use to
+    // periodically snapshot its surroundings, independent of whatever the
+    // player's own camera is looking at. Never appended to the DOM — it just
+    // renders into its own canvas, which we read out with toDataURL.
+    // ─────────────────────────────────────────────
+    const VISION_TILE_SIZE = 256;
+    const VISION_EYE_HEIGHT = 1.6; // meters above ground, roughly head height
+    // Offsets are added to xBot.facingAngle to get each view's world-space
+    // heading. NOTE: left/right here are a best-effort guess at handedness
+    // given this file's (sin(angle), cos(angle)) forward convention — if
+    // they come out swapped in testing, just flip these two values.
+    const VISION_DIRECTIONS = {
+      front: 0,
+      right: -Math.PI / 2,
+      rear: Math.PI,
+      left: Math.PI / 2,
+    };
+
+    const visionCanvas = document.createElement('canvas');
+    visionCanvas.width = VISION_TILE_SIZE;
+    visionCanvas.height = VISION_TILE_SIZE;
+    const visionRenderer = new THREE.WebGLRenderer({ canvas: visionCanvas, antialias: true, preserveDrawingBuffer: true });
+    visionRenderer.setSize(VISION_TILE_SIZE, VISION_TILE_SIZE, false);
+    visionRenderer.toneMapping = THREE.ACESFilmicToneMapping;
+    visionRenderer.toneMappingExposure = 1.1;
+    visionRenderer.outputColorSpace = THREE.SRGBColorSpace;
+    // No shadow map here — this renderer fires often and doesn't need to
+    // match the main view's fidelity, just be legible.
+
+    const visionCamera = new THREE.PerspectiveCamera(60, 1, 0.1, 200);
+
+    // Renders one direction ('front' | 'right' | 'rear' | 'left') from
+    // x-bot's current position/facing and returns a PNG data URL, or null
+    // if x-bot hasn't loaded yet.
+    function captureVisionDirection(direction) {
+      if (!xBot.vrm) return null;
+      const eyeY = heightAt(xBot.pos.x, xBot.pos.z) + VISION_EYE_HEIGHT;
+      visionCamera.position.set(xBot.pos.x, eyeY, xBot.pos.z);
+      const worldAngle = xBot.facingAngle + VISION_DIRECTIONS[direction];
+      const lookX = xBot.pos.x + Math.sin(worldAngle) * 10;
+      const lookZ = xBot.pos.z + Math.cos(worldAngle) * 10;
+      visionCamera.lookAt(lookX, eyeY, lookZ);
+      // The camera sits at x-bot's own head position, so without this it
+      // renders from *inside* x-bot's own head mesh — front/rear views end
+      // up staring straight through the face/skull geometry (a big blob
+      // filling the frame). Hide x-bot's own model for just this one render,
+      // the same way a first-person camera would.
+      const wasVisible = xBot.vrm.scene.visible;
+      xBot.vrm.scene.visible = false;
+      visionRenderer.render(scene, visionCamera);
+      xBot.vrm.scene.visible = wasVisible;
+      return visionCanvas.toDataURL('image/png');
+    }
+
+    function captureAllVisionDirections() {
+      const shots = {};
+      for (const direction of Object.keys(VISION_DIRECTIONS)) {
+        shots[direction] = captureVisionDirection(direction);
+      }
+      return shots;
+    }
+
+    // Vision is now captured on demand only: nothing renders x-bot's four
+    // views unless the model actually calls look_around. This poll loop is
+    // deliberately cheap — just a small fetch, no GPU work — and only does
+    // the real (4x offscreen render + PNG encode) work on the rare poll
+    // where the backend says a look_around call is waiting on it.
+    const VISION_POLL_INTERVAL_MS = 400;
+    setInterval(async () => {
+      let pending;
+      try {
+        const res = await fetch('/api/vision_poll');
+        pending = await res.json();
+      } catch (e) {
+        return; // server not reachable this tick — just try again next poll
+      }
+      if (!pending.capture) return;
+
+      const shots = captureAllVisionDirections();
+      if (!shots.front) return; // x-bot not loaded yet — nothing to capture
+
+      try {
+        await fetch('/api/vision_update', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...shots, request_id: pending.request_id }),
+        });
+      } catch (e) {
+        // Non-fatal — look_around will time out server-side and the model
+        // can just try again.
+      }
+    }, VISION_POLL_INTERVAL_MS);
+
+    // A fixed-destination walk_to/run_to no longer waits until the whole
+    // agent turn finishes to reach the browser — it's dispatched here,
+    // immediately, the moment the tool is called, so the backend can
+    // actually block until this specific walk really arrives (see
+    // xBotApplyAction's pendingMoveId tagging and updateXBot's arrival
+    // POST) instead of just declaring victory the instant the tool ran.
+    // Same cheap-poll shape as vision: this fetch is trivial, and only
+    // queues an action (no rendering) on the rare tick where one's waiting.
+    const MOVE_POLL_INTERVAL_MS = 250;
+    setInterval(async () => {
+      let pending;
+      try {
+        const res = await fetch('/api/move_poll');
+        pending = await res.json();
+      } catch (e) {
+        return;
+      }
+      if (!pending.action) return;
+      xBotQueueActions([{ ...pending.action, moveId: pending.move_id }]);
+    }, MOVE_POLL_INTERVAL_MS);
+
+    // Same idea as the move poll above, but for every OTHER action —
+    // pick_up_block, put_down_block, stack_block, sit, stand, wave, hug,
+    // turn, escort, and the dynamic-target walks used by the
+    // stand/sit_beside/facing helpers. These used to only reach the
+    // browser bundled into the /api/chat response once the *entire* agent
+    // turn finished, which could be well after any walk_to calls in
+    // between had already played out in real time — so "pick up the red
+    // block, walk it to Location-2, put it down" would have x-bot walk
+    // there and back empty-handed, then have the block snap into the
+    // carried pose and drop again, both in the same instant, once the
+    // whole response finally landed. Polling for these the same way
+    // move_poll does means pick_up_block/put_down_block land exactly when
+    // the tool actually runs, in between the real walks, so the carry
+    // animation tracks the block correctly instead of appearing stuck.
+    const ACTION_POLL_INTERVAL_MS = 250;
+    setInterval(async () => {
+      let pending;
+      try {
+        const res = await fetch('/api/action_poll');
+        pending = await res.json();
+      } catch (e) {
+        return;
+      }
+      if (!pending.actions || !pending.actions.length) return;
+      xBotQueueActions(pending.actions);
+    }, ACTION_POLL_INTERVAL_MS);
+
+    // ─────────────────────────────────────────────
+    // Lighting
+    // ─────────────────────────────────────────────
+    const hemi = new THREE.HemisphereLight(0xbfd8ff, 0x3a3a2e, 0.9);
+    scene.add(hemi);
+
+    const sun = new THREE.DirectionalLight(0xfff2df, 2.4);
+    sun.position.set(12, 18, 8);
+    sun.castShadow = true;
+    sun.shadow.mapSize.set(2048, 2048);
+    sun.shadow.camera.left = -25; sun.shadow.camera.right = 25;
+    sun.shadow.camera.top = 25; sun.shadow.camera.bottom = -25;
+    sun.shadow.camera.far = 60;
+    sun.shadow.bias = -0.0005;
+    scene.add(sun);
+
+    // ─────────────────────────────────────────────
+    // Ground / Terrain
+    // ─────────────────────────────────────────────
+    const WORLD_SIZE = 60;
+
+    const HILL_CENTER = { x: 16, z: -14 };
+    const HILL_RADIUS = 11;
+    const HILL_HEIGHT = 5.5;
+
+    // Coastline: west edge (x < COAST_X) slopes down into an ocean seabed.
+    // The sea floor now ramps down gradually all the way out to WORLD_X_MIN,
+    // giving a much larger swimmable/deep-water area than the old hard edge.
+    const WATER_LEVEL = 0;
+    const COAST_X = -12;
+    const WORLD_X_MIN = -WORLD_SIZE / 2 - 40;   // west play/ocean boundary, well past the old edge
+    const OCEAN_DEPTH = 9;
+    function heightAt(x, z) {
+      const dx = x - HILL_CENTER.x;
+      const dz = z - HILL_CENTER.z;
+      const dist = Math.hypot(dx, dz);
+      let h = 0;
+      if (dist < HILL_RADIUS) {
+        const t = 1 - dist / HILL_RADIUS;
+        const smooth = t * t * (3 - 2 * t);
+        h = smooth * HILL_HEIGHT;
+      }
+      if (x < COAST_X) {
+        const tt = THREE.MathUtils.clamp((COAST_X - x) / (COAST_X - WORLD_X_MIN), 0, 1);
+        const smooth = tt * tt * (3 - 2 * tt);
+        h -= smooth * OCEAN_DEPTH;
+      }
+      return h;
+    }
+    function isWaterAt(x, z) { return heightAt(x, z) < WATER_LEVEL - 0.05; }
+
+    // Beach: blend grass -> sand as the shoreline is approached.
+    const SAND_COLOR = new THREE.Color(0xd9c283);
+    const GRASS_COLOR = new THREE.Color(0x5c8a4a);
+    const BEACH_WIDTH = 4;
+    function beachColorAt(x, target) {
+      let t = (x - (COAST_X - BEACH_WIDTH)) / (2 * BEACH_WIDTH);
+      t = THREE.MathUtils.clamp(t, 0, 1);
+      t = t * t * (3 - 2 * t);
+      return target.copy(SAND_COLOR).lerp(GRASS_COLOR, t);
+    }
+
+    const groundMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1 });
+    const groundGeo = new THREE.PlaneGeometry(WORLD_SIZE, WORLD_SIZE, 120, 120);
+    {
+      const pos = groundGeo.attributes.position;
+      const colors = new Float32Array(pos.count * 3);
+      const tmpColor = new THREE.Color();
+      for (let i = 0; i < pos.count; i++) {
+        const lx = pos.getX(i);
+        const ly = pos.getY(i);
+        pos.setZ(i, heightAt(lx, -ly));
+        beachColorAt(lx, tmpColor);
+        colors[i * 3] = tmpColor.r;
+        colors[i * 3 + 1] = tmpColor.g;
+        colors[i * 3 + 2] = tmpColor.b;
+      }
+      groundGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+      groundGeo.computeVertexNormals();
+    }
+    const ground = new THREE.Mesh(groundGeo, groundMat);
+    ground.rotation.x = -Math.PI / 2;
+    ground.receiveShadow = true;
+    ground.castShadow = true;
+    scene.add(ground);
+
+    // Deep-water seabed extension: covers the enlarged ocean out to WORLD_X_MIN,
+    // beyond the original 60x60 ground tile, so the floor is visible while diving.
+    const SEABED_EXT_MAX = -WORLD_SIZE / 2;
+    const seabedExtWidth = SEABED_EXT_MAX - WORLD_X_MIN;
+    const seabedExtCenterX = (WORLD_X_MIN + SEABED_EXT_MAX) / 2;
+    const seabedMat = new THREE.MeshStandardMaterial({ color: 0xc2ab74, roughness: 1 });
+    const seabedGeo = new THREE.PlaneGeometry(seabedExtWidth, WORLD_SIZE + 6, 60, 90);
+    {
+      const pos = seabedGeo.attributes.position;
+      for (let i = 0; i < pos.count; i++) {
+        const lx = pos.getX(i) + seabedExtCenterX;
+        const ly = pos.getY(i);
+        pos.setX(i, lx);
+        pos.setZ(i, heightAt(lx, -ly));
+      }
+      seabedGeo.computeVertexNormals();
+    }
+    const seabedExt = new THREE.Mesh(seabedGeo, seabedMat);
+    seabedExt.rotation.x = -Math.PI / 2;
+    seabedExt.receiveShadow = true;
+    scene.add(seabedExt);
+
+    const grid = new THREE.GridHelper(WORLD_SIZE, WORLD_SIZE / 2, 0x2f4a26, 0x3f5e33);
+    grid.position.y = 0.01;
+    grid.material.transparent = true;
+    grid.material.opacity = 0.35;
+    scene.add(grid);
+
+    // ─────────────────────────────────────────────
+    // Ocean (west edge)
+    // ─────────────────────────────────────────────
+    const OCEAN_X_MIN = WORLD_X_MIN - 3;
+    const OCEAN_X_MAX = COAST_X;
+    const OCEAN_Z_MIN = -WORLD_SIZE / 2 - 3;
+    const OCEAN_Z_MAX = WORLD_SIZE / 2 + 3;
+    const oceanWidth = OCEAN_X_MAX - OCEAN_X_MIN;
+    const oceanDepth = OCEAN_Z_MAX - OCEAN_Z_MIN;
+    const oceanCenterX = (OCEAN_X_MIN + OCEAN_X_MAX) / 2;
+    const oceanCenterZ = (OCEAN_Z_MIN + OCEAN_Z_MAX) / 2;
+
+    const waterGeo = new THREE.PlaneGeometry(oceanWidth, oceanDepth, 64, 72);
+    const waterMat = new THREE.MeshStandardMaterial({
+      color: 0x1f6fa8,
+      transparent: true,
+      opacity: 0.82,
+      roughness: 0.25,
+      metalness: 0.05,
+      side: THREE.DoubleSide
+    });
+    const water = new THREE.Mesh(waterGeo, waterMat);
+    water.rotation.x = -Math.PI / 2;
+    water.position.set(oceanCenterX, WATER_LEVEL, oceanCenterZ);
+    scene.add(water);
+
+    function updateWaterWaves(t) {
+      const pos = waterGeo.attributes.position;
+      for (let i = 0; i < pos.count; i++) {
+        const lx = pos.getX(i);
+        const ly = pos.getY(i);
+        const wave = Math.sin(lx * 0.35 + t * 1.4) * 0.06 + Math.cos(ly * 0.28 + t * 1.1) * 0.045;
+        pos.setZ(i, wave);
+      }
+      pos.needsUpdate = true;
+      waterGeo.computeVertexNormals();
+    }
+
+    // ─────────────────────────────────────────────
+    // Landing Target Ground Indicator
+    // ─────────────────────────────────────────────
+    const landingTarget = new THREE.Group();
+    const targetMat = new THREE.MeshBasicMaterial({
+      color: 0x79c0ff,
+      transparent: true,
+      opacity: 0.75,
+      side: THREE.DoubleSide,
+      depthWrite: false
+    });
+
+    const outerRing = new THREE.Mesh(new THREE.RingGeometry(0.5, 0.65, 32), targetMat);
+    const innerRing = new THREE.Mesh(new THREE.RingGeometry(0.12, 0.22, 32), targetMat);
+    const centerDot = new THREE.Mesh(new THREE.CircleGeometry(0.06, 16), targetMat);
+
+    outerRing.rotation.x = -Math.PI / 2;
+    innerRing.rotation.x = -Math.PI / 2;
+    centerDot.rotation.x = -Math.PI / 2;
+
+    landingTarget.add(outerRing, innerRing, centerDot);
+    landingTarget.visible = false;
+    scene.add(landingTarget);
+
+    function seededRandom(seed) {
+      let s = seed;
+      return () => { s = (s * 9301 + 49297) % 233280; return s / 233280; };
+    }
+    const rand = seededRandom(42);
+
+    function makeTree() {
+      const g = new THREE.Group();
+      const trunk = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.15, 0.2, 1.4, 7),
+        new THREE.MeshStandardMaterial({ color: 0x6b4a34, roughness: 1 })
+      );
+      trunk.position.y = 0.7;
+      trunk.castShadow = true;
+      const leaves = new THREE.Mesh(
+        new THREE.ConeGeometry(1.1, 2.2, 8),
+        new THREE.MeshStandardMaterial({ color: 0x3f7a3a, roughness: 0.9 })
+      );
+      leaves.position.y = 2.3;
+      leaves.castShadow = true;
+      g.add(trunk, leaves);
+      return g;
+    }
+    function makeRock() {
+      const rock = new THREE.Mesh(
+        new THREE.IcosahedronGeometry(0.4 + rand() * 0.3, 0),
+        new THREE.MeshStandardMaterial({ color: 0x8a8a8a, roughness: 1 })
+      );
+      rock.castShadow = true;
+      rock.rotation.set(rand() * Math.PI, rand() * Math.PI, rand() * Math.PI);
+      return rock;
+    }
+
+    const propsGroup = new THREE.Group();
+    const CLEAR_RADIUS = 4;
+    const SUMMIT_CLEAR_RADIUS = 6;
+    for (let i = 0; i < 40; i++) {
+      const x = (rand() - 0.5) * (WORLD_SIZE - 6);
+      const z = (rand() - 0.5) * (WORLD_SIZE - 6);
+      if (Math.hypot(x, z) < CLEAR_RADIUS) continue;
+      if (isWaterAt(x, z)) continue;
+      const distFromSummit = Math.hypot(x - HILL_CENTER.x, z - HILL_CENTER.z);
+      const isTree = rand() < 0.6;
+      if (isTree && distFromSummit < SUMMIT_CLEAR_RADIUS) continue;
+      const obj = isTree ? makeTree() : makeRock();
+      obj.position.set(x, heightAt(x, z), z);
+      propsGroup.add(obj);
+    }
+    scene.add(propsGroup);
+
+    // ─────────────────────────────────────────────
+    // Text sprites (name tags, location labels, speech bubbles)
+    // ─────────────────────────────────────────────
+    function makeTextSprite(text, { fontSize = 42, color = '#e8e8f0', bg = null, scale = 1 } = {}) {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const padding = 24;
+      ctx.font = `600 ${fontSize}px -apple-system, "Segoe UI", Roboto, sans-serif`;
+      const textWidth = ctx.measureText(text).width;
+      canvas.width = Math.ceil(textWidth + padding * 2);
+      canvas.height = fontSize + padding * 2;
+      ctx.font = `600 ${fontSize}px -apple-system, "Segoe UI", Roboto, sans-serif`;
+      if (bg) {
+        ctx.fillStyle = bg;
+        const r = 18;
+        ctx.beginPath();
+        ctx.moveTo(r, 0);
+        ctx.arcTo(canvas.width, 0, canvas.width, canvas.height, r);
+        ctx.arcTo(canvas.width, canvas.height, 0, canvas.height, r);
+        ctx.arcTo(0, canvas.height, 0, 0, r);
+        ctx.arcTo(0, 0, canvas.width, 0, r);
+        ctx.closePath();
+        ctx.fill();
+      }
+      ctx.fillStyle = color;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(text, canvas.width / 2, canvas.height / 2 + 2);
+
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.colorSpace = THREE.SRGBColorSpace;
+      const mat = new THREE.SpriteMaterial({ map: texture, depthTest: false, transparent: true });
+      const sprite = new THREE.Sprite(mat);
+      const aspect = canvas.width / canvas.height;
+      const h = 0.55 * scale;
+      sprite.scale.set(h * aspect, h, 1);
+      sprite.renderOrder = 999;
+      return sprite;
+    }
+
+    function updateTextSprite(sprite, text, opts = {}) {
+      const fresh = makeTextSprite(text, opts);
+      sprite.material.map.dispose();
+      sprite.material.map = fresh.material.map;
+      sprite.scale.copy(fresh.scale);
+      sprite.material.needsUpdate = true;
+    }
+
+    // ─────────────────────────────────────────────
+    // Location markers — four named spots the AI can be asked to go to
+    // ─────────────────────────────────────────────
+    const locationMarkers = {};
+    function makeLocationMarker(name, x, z) {
+      const g = new THREE.Group();
+      const y = heightAt(x, z);
+
+      const pylon = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.06, 0.06, 2.4, 10),
+        new THREE.MeshStandardMaterial({ color: 0x79c0ff, emissive: 0x1a4a7a, emissiveIntensity: 0.8, roughness: 0.4 })
+      );
+      pylon.position.y = 1.2;
+      pylon.castShadow = true;
+
+      const beacon = new THREE.Mesh(
+        new THREE.IcosahedronGeometry(0.16, 1),
+        new THREE.MeshStandardMaterial({ color: 0xa78bfa, emissive: 0x6b4fd6, emissiveIntensity: 1.1, roughness: 0.3 })
+      );
+      beacon.position.y = 2.55;
+
+      const ring = new THREE.Mesh(
+        new THREE.RingGeometry(0.55, 0.68, 32),
+        new THREE.MeshBasicMaterial({ color: 0x79c0ff, transparent: true, opacity: 0.55, side: THREE.DoubleSide, depthWrite: false })
+      );
+      ring.rotation.x = -Math.PI / 2;
+      ring.position.y = 0.03;
+
+      const label = makeTextSprite(name, { fontSize: 40, bg: 'rgba(15,15,25,0.7)' });
+      label.position.y = 3.2;
+
+      g.add(pylon, beacon, ring, label);
+      g.position.set(x, y, z);
+      g.userData = { beacon, ring, phase: Math.random() * Math.PI * 2 };
+      scene.add(g);
+      locationMarkers[name] = g;
+      return g;
+    }
+    for (const [name, loc] of Object.entries(LOCATIONS)) {
+      makeLocationMarker(name, loc.x, loc.z);
+    }
+    function updateLocationMarkers(t) {
+      for (const g of Object.values(locationMarkers)) {
+        const { beacon, ring, phase } = g.userData;
+        beacon.position.y = 2.55 + Math.sin(t * 1.6 + phase) * 0.08;
+        beacon.rotation.y = t * 0.8 + phase;
+        const pulse = 1 + Math.sin(t * 2 + phase) * 0.08;
+        ring.scale.set(pulse, pulse, 1);
+      }
+    }
+
+    // ─────────────────────────────────────────────
+    // Movable blocks — small cubes x-bot can walk to, pick up, carry, and
+    // set down or stack (kept in sync with BLOCK_DEFS in app.py)
+    // ─────────────────────────────────────────────
+    const BLOCK_SIZE = 0.5;
+    const BLOCK_DEFS = {
+      'Block-Red':    { hex: 0xd9483c, x: 6.5, z: -2 },
+      'Block-Blue':   { hex: 0x3c7ad9, x: 7.5, z: -2 },
+      'Block-Green':  { hex: 0x4caf50, x: 8.5, z: -2 },
+      'Block-Yellow': { hex: 0xe0c23c, x: 9.5, z: -2 },
+    };
+    // blocks[name] = { mesh, spawn: {x, z} } — spawn is kept around so the
+    // "reset conversation" button can pop every block back to its starting
+    // spot without a round trip to the server.
+    const blocks = {};
+    function makeBlock(name, def) {
+      const geo = new THREE.BoxGeometry(BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+      const mat = new THREE.MeshStandardMaterial({ color: def.hex, roughness: 0.55, metalness: 0.05 });
+      const mesh = new THREE.Mesh(geo, mat);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      mesh.position.set(def.x, heightAt(def.x, def.z) + BLOCK_SIZE / 2, def.z);
+      scene.add(mesh);
+      blocks[name] = { mesh, spawn: { x: def.x, z: def.z } };
+    }
+    for (const [name, def] of Object.entries(BLOCK_DEFS)) {
+      makeBlock(name, def);
+    }
+    function resetBlockPositions() {
+      xBot.heldBlock = null;
+      for (const { mesh, spawn } of Object.values(blocks)) {
+        mesh.position.set(spawn.x, heightAt(spawn.x, spawn.z) + BLOCK_SIZE / 2, spawn.z);
+        mesh.rotation.set(0, 0, 0);
+      }
+    }
+
+    // While x-bot carries a block, its mesh is repositioned every frame to a
+    // fixed offset in front of x-bot's chest — simpler and more robust than
+    // parenting to a hand bone, and plenty convincing for a block-gym demo.
+    // xBotApplyAction's put_down_block/stack_block cases hand it back to a
+    // normal world-space rest position when released.
+    const BLOCK_CARRY_FORWARD = 0.38;
+    const BLOCK_CARRY_HEIGHT = 1.05;
+    function updateHeldBlock() {
+      if (!xBot.heldBlock) return;
+      const entry = blocks[xBot.heldBlock];
+      if (!entry) return;
+      const fx = Math.sin(xBot.facingAngle), fz = Math.cos(xBot.facingAngle);
+      const groundY = heightAt(xBot.pos.x, xBot.pos.z);
+      entry.mesh.position.set(
+        xBot.pos.x + fx * BLOCK_CARRY_FORWARD,
+        groundY + BLOCK_CARRY_HEIGHT,
+        xBot.pos.z + fz * BLOCK_CARRY_FORWARD
+      );
+      entry.mesh.rotation.y = xBot.facingAngle;
+    }
+
+    // ─────────────────────────────────────────────
+    // Underwater scenery
+    // ─────────────────────────────────────────────
+    const seaweedBlades = [];
+    function makeSeaweedClump() {
+      const g = new THREE.Group();
+      const bladeCount = 3 + Math.floor(rand() * 3);
+      for (let i = 0; i < bladeCount; i++) {
+        const height = 0.7 + rand() * 1.3;
+        const bladeGeo = new THREE.PlaneGeometry(0.16, height, 1, 4);
+        bladeGeo.translate(0, height / 2, 0); // pivot at base
+        const bladeMat = new THREE.MeshStandardMaterial({
+          color: new THREE.Color(0x1f6b45).lerp(new THREE.Color(0x2f8a5a), rand()),
+          roughness: 0.9,
+          side: THREE.DoubleSide
+        });
+        const blade = new THREE.Mesh(bladeGeo, bladeMat);
+        blade.position.set((rand() - 0.5) * 0.3, 0, (rand() - 0.5) * 0.3);
+        blade.rotation.y = rand() * Math.PI;
+        blade.userData.swayPhase = rand() * Math.PI * 2;
+        blade.userData.swaySpeed = 0.5 + rand() * 0.6;
+        blade.userData.swayAmp = 0.12 + rand() * 0.1;
+        g.add(blade);
+        seaweedBlades.push(blade);
+      }
+      return g;
+    }
+
+    const underwaterGroup = new THREE.Group();
+    const OCEAN_PLANT_MIN_X = WORLD_X_MIN + 4;
+    const OCEAN_PLANT_MAX_X = COAST_X - 2.5;
+    const OCEAN_PLANT_Z_RANGE = WORLD_SIZE / 2 + 2;
+
+    for (let i = 0; i < 26; i++) {
+      const x = OCEAN_PLANT_MIN_X + rand() * (OCEAN_PLANT_MAX_X - OCEAN_PLANT_MIN_X);
+      const z = (rand() - 0.5) * 2 * OCEAN_PLANT_Z_RANGE;
+      const clump = makeSeaweedClump();
+      clump.position.set(x, heightAt(x, z), z);
+      underwaterGroup.add(clump);
+    }
+    for (let i = 0; i < 18; i++) {
+      const x = OCEAN_PLANT_MIN_X + rand() * (OCEAN_PLANT_MAX_X - OCEAN_PLANT_MIN_X);
+      const z = (rand() - 0.5) * 2 * OCEAN_PLANT_Z_RANGE;
+      const rock = makeRock();
+      rock.position.set(x, heightAt(x, z), z);
+      underwaterGroup.add(rock);
+    }
+    scene.add(underwaterGroup);
+
+    // Fish school: simple cone-bodied fish swimming slow circular paths.
+    const fishSchool = [];
+    function makeFish(color) {
+      const g = new THREE.Group();
+      const body = new THREE.Mesh(
+        new THREE.ConeGeometry(0.09, 0.32, 6),
+        new THREE.MeshStandardMaterial({ color, roughness: 0.5, metalness: 0.15 })
+      );
+      body.rotation.x = -Math.PI / 2; // point apex toward -Z (forward, for lookAt)
+      const tail = new THREE.Mesh(
+        new THREE.ConeGeometry(0.09, 0.14, 4),
+        body.material
+      );
+      tail.rotation.x = Math.PI / 2;
+      tail.position.z = 0.22;
+      g.add(body, tail);
+      return g;
+    }
+    const FISH_COLORS = [0xf0a13a, 0xc0c8d8, 0x4fa0c8, 0xe86a5c];
+    const FISH_MAX_X = -30; // stay in water deep enough (>= ~2m) that surface/floor clamp never inverts
+    for (let i = 0; i < 14; i++) {
+      const centerX = OCEAN_PLANT_MIN_X + 5 + rand() * (FISH_MAX_X - (OCEAN_PLANT_MIN_X + 5));
+      const centerZ = (rand() - 0.5) * 2 * (OCEAN_PLANT_Z_RANGE - 8);
+      const seabedY = heightAt(centerX, centerZ);
+      const loY = seabedY + 0.8;
+      const hiY = WATER_LEVEL - 0.8;
+      const yBase = hiY >= loY
+        ? THREE.MathUtils.clamp(seabedY + 2.5 + rand() * 2, loY, hiY)
+        : (loY + hiY) / 2;
+      const fish = makeFish(FISH_COLORS[i % FISH_COLORS.length]);
+      fish.userData = {
+        center: { x: centerX, z: centerZ },
+        radius: 1.5 + rand() * 3,
+        speed: 0.25 + rand() * 0.35,
+        phase: rand() * Math.PI * 2,
+        yBase, yAmp: 0.2 + rand() * 0.3
+      };
+      fishSchool.push(fish);
+      underwaterGroup.add(fish);
+    }
+
+    function updateSeaweed(t) {
+      for (const blade of seaweedBlades) {
+        blade.rotation.z = Math.sin(t * blade.userData.swaySpeed + blade.userData.swayPhase) * blade.userData.swayAmp;
+      }
+    }
+    function updateFish(t) {
+      for (const f of fishSchool) {
+        const { center, radius, speed, phase, yBase, yAmp } = f.userData;
+        const angle = t * speed + phase;
+        const x = center.x + Math.cos(angle) * radius;
+        const z = center.z + Math.sin(angle) * radius;
+        const y = yBase + Math.sin(t * 1.3 + phase) * yAmp;
+        f.position.set(x, y, z);
+        const nextAngle = angle + 0.06;
+        const nx = center.x + Math.cos(nextAngle) * radius;
+        const nz = center.z + Math.sin(nextAngle) * radius;
+        f.lookAt(nx, y, nz);
+      }
+    }
+
+    // ─────────────────────────────────────────────
+    // State
+    // ─────────────────────────────────────────────
+    let currentVrm = null;
+    const clock = new THREE.Clock();
+
+    const MOVE_SPEED = 2.6;      // walking (grounded) horizontal speed
+    const BACK_MULT = 0.6;
+    const RUN_MULT = 2.1;
+    const FLY_SPEED = 10.0;      // flying speed — used for both horizontal flight and ascend/descend
+    const SWIM_SPEED = 4.0;      // underwater / surface swimming horizontal speed
+    const FWD_SMOOTH = 8;
+    const TURN_RATE_MAX = 2.4;
+    const TURN_SMOOTH = 10;
+    const PITCH_SMOOTH = 6;
+
+    let forwardSpeed = 0;
+    let angularVelocity = 0;
+    let facingAngle = 0;
+    let modelYawOffset = 0; // extra yaw baked in for models whose front faces +Z (VRM0.0) instead of -Z (VRM1.0)
+    let currentPitch = 0;
+    let altitude = 0;
+    let walkPhase = 0;
+    let swimPhase = 0;
+    let moveBlend = 0;
+    const POSE_BLEND_SMOOTH = 9;
+
+    // Sit state for y-bot. yBotMode mirrors the 'mode' computed fresh each
+    // frame in updateMovement (ground/fly/swim) — hoisted to module scope so
+    // the keydown handler (which can fire between frames) can gate sitting
+    // to ground mode using the most recently known value.
+    let yBotSitting = false;
+    let yBotSitBlend = 0;
+    let yBotMode = 'ground';
+    // Attach mode: y-bot's position is driven by x-bot's movement (see
+    // updateMovement's attached branch) instead of WASD input — toggled by
+    // the 'F' key. yBotAttachSide mirrors escortSide: whichever flank of
+    // x-bot was closer to y-bot at the moment of attaching, held fixed
+    // afterward. yBotAttachPrevXBotPos tracks x-bot's position frame-to-frame
+    // so its velocity can be fed forward into y-bot's own movement.
+    let yBotAttached = false;
+    let yBotAttachSide = 1;
+    let yBotAttachPrevXBotPos = null;
+    // Dance-join: a special case of the attach coupling above, used when F is
+    // pressed while x-bot is dancing (see handleAttachKey). y-bot rides along
+    // via the same attached-position code in updateMovement, just held at a
+    // face-to-face offset instead of a flank, with its own AnimationMixer
+    // playing the same retargeted clip in place of normal locomotion pose.
+    let yBotDancing = false;
+    let yBotDanceMixer = null;
+    let yBotDanceAction = null;
+    // y-bot's own facing and standing spot are captured ONCE at the moment
+    // of joining (handleAttachKey) and held fixed for the whole session —
+    // x-bot may turn 180° and step closer during its periodic flourish (see
+    // updateXBot's dance-turn scheduler), but y-bot always keeps facing the
+    // same way and standing in the same spot regardless.
+    let yBotDanceFacingAngle = null;
+    let yBotDanceAnchor = null; // {x, z}
+    // True once actual movement has been seen during the current attach/escort
+    // session, so the confirmation hint (see updateMovement's tail) fades
+    // after movement starts rather than sitting on screen indefinitely. Reset
+    // to false wherever a session begins (handleAttachKey's attach branch,
+    // and xBotApplyAction's 'escort' case).
+    let couplingHintDismissed = false;
+    let couplingHintShownAt = 0;
+    // VRM humanoid "normalized" bones use identity rotation (0,0,0) = literal T-pose.
+    // Every arm pose below only ever applied a small Z offset (0.06–0.55 rad), which
+    // is nowhere near enough to bring the arm down from horizontal to the character's
+    // side (~1.3 rad) — so the arms stayed stuck near T-pose in every mode, most
+    // visible during walking where the arm also swings. ARM_REST_Z is that missing
+    // baseline; every mode's Z term below is now ARM_REST_Z (down at the side) plus
+    // the original small adjustment on top, instead of just the small adjustment alone.
+    // Sign is negative: on this rig, positive Z on leftUpperArm rotates the arm UP
+    // past T-pose toward vertical-up, so bringing it down to the side needs negative.
+    const ARM_REST_Z = -1.3;
+    const prevAvatarPos = new THREE.Vector3(0, 0, 0);
+    // y-bot's position at the start of the current frame, captured before
+    // updateMovement runs. Collision uses this (not prevAvatarPos, which
+    // updateMovement overwrites with the new position) to revert y-bot back
+    // to where it stood if the frame's movement would overlap x-bot.
+    const yBotPreMovePos = new THREE.Vector3(0, 0, 0);
+
+    const FOG_COLOR_NORMAL = new THREE.Color(0x9fc7e8);
+    const FOG_COLOR_WATER = new THREE.Color(0x1c4f6b);
+    let underwaterBlend = 0;
+
+    const CAM_FOLLOW_SMOOTH = 3.2;
+    let cameraFollowEnabled = true;
+
+    const keys = { fwd: false, back: false, left: false, right: false, run: false, flyUp: false, flyDown: false };
+
+    let nextBlinkTime = 2 + Math.random() * 3;
+    let blinkTimer = 0;
+    let blinkPhase = 0;
+
+    let frameCount = 0, fpsAccum = 0, lastFpsUpdate = performance.now();
+
+    // ─────────────────────────────────────────────
+    // UI helpers
+    // ─────────────────────────────────────────────
+    function setStatus(text, cls = 'loading') {
+      statusValue.textContent = text;
+      statusValue.className = 'value ' + cls;
+      if (cls === 'loading') statusValue.classList.add('loading-indicator');
+    }
+    function setProgress(pct) { progressFill.style.width = Math.min(100, Math.max(0, pct)) + '%'; }
+    function showError(msg) {
+      errorBanner.textContent = msg;
+      errorBanner.classList.add('visible');
+      setTimeout(() => errorBanner.classList.remove('visible'), 8000);
+    }
+
+    // ─────────────────────────────────────────────
+    // VRM loader
+    // ─────────────────────────────────────────────
+    const loader = new GLTFLoader();
+    loader.register((parser) => new VRMLoaderPlugin(parser));
+
+    function disposeCurrentVrm() {
+      if (!currentVrm) return;
+      // A disposed VRM's scene graph is gone — don't leave a mixer/flag
+      // pointing at it, or updateLocomotion would stay stuck skipping pose
+      // updates forever with nothing left to animate.
+      if (yBotDancing) { yBotAttached = false; stopYBotDance(); }
+      yBotDanceMixer = null;
+      scene.remove(currentVrm.scene);
+      currentVrm.scene.traverse((obj) => {
+        if (obj.geometry) obj.geometry.dispose();
+        if (obj.material) {
+          if (Array.isArray(obj.material)) obj.material.forEach(m => m.dispose());
+          else obj.material.dispose();
+        }
+      });
+      currentVrm = null;
+    }
+
+    function processLoadedVrm(gltf, displayName) {
+      const vrm = gltf.userData.vrm;
+      if (!vrm) throw new Error('No VRM data in loaded GLTF');
+
+      try { VRMUtils.removeUnnecessaryVertices(vrm.scene); } catch (e) { console.warn(e.message); }
+      try { VRMUtils.combineSkeletons(vrm.scene); } catch (e) { console.warn(e.message); }
+
+      const metaVersion = vrm.meta?.metaVersion ?? vrm.meta?.version ?? 'unknown';
+      // Don't rely on VRMUtils.rotateVRM0's one-time rotation.y mutation — it gets
+      // overwritten every frame by the facingAngle-driven rotation.set() below/in
+      // updateMovement(). Instead remember the offset and apply it consistently.
+      modelYawOffset = (metaVersion === '0' || metaVersion === '0.0') ? Math.PI : 0;
+
+      vrm.scene.traverse((obj) => { if (obj.isMesh) { obj.castShadow = true; obj.receiveShadow = true; } });
+
+      altitude = 0;
+      currentPitch = 0;
+      vrm.scene.position.set(0, heightAt(0, 0), 0);
+      scene.add(vrm.scene);
+      currentVrm = vrm;
+      facingAngle = 0;
+      vrm.scene.rotation.set(0, facingAngle + modelYawOffset, 0);
+      forwardSpeed = 0;
+      angularVelocity = 0;
+      prevAvatarPos.set(0, vrm.scene.position.y, 0);
+
+      if (vrm.springBoneManager) {
+        vrm.springBoneManager.joints.forEach((joint) => { joint.center = vrm.scene; });
+        vrm.springBoneManager.setInitState();
+      }
+
+      controls.target.set(0, vrm.scene.position.y + 1.1, 0);
+      camera.position.copy(controls.target).add(DEFAULT_CAM_OFFSET);
+      controls.update();
+
+      setStatus('Ready', 'ok');
+      setProgress(100);
+      modelValue.textContent = displayName;
+    }
+
+    function loadVrmFromUrl(url, displayName = 'sample.vrm') {
+      disposeCurrentVrm();
+      setStatus('Loading…', 'loading');
+      setProgress(0);
+      modelValue.textContent = displayName;
+
+      loader.load(
+        url,
+        (gltf) => {
+          try { processLoadedVrm(gltf, displayName); }
+          catch (err) { console.error(err); setStatus('Error', 'warn'); showError('Failed to process VRM: ' + err.message); }
+        },
+        (evt) => { if (evt.total) setProgress((evt.loaded / evt.total) * 100); },
+        (err) => { console.error(err); setStatus('Error', 'warn'); showError('Failed to load VRM: ' + err.message); }
+      );
+    }
+
+    // ─────────────────────────────────────────────
+    // x-bot — the AI-controlled avatar
+    // ─────────────────────────────────────────────
+    // y-bot (above) keeps the full flight/swim controller untouched. x-bot is
+    // simpler by design: it only ever walks, runs, idles, sits, or waves, all
+    // driven by high-level actions coming back from the Flask/Ollama backend.
+    const xBot = {
+      vrm: null,
+      pos: { x: 4, z: -4 },
+      facingAngle: Math.PI,
+      status: 'idle',        // idle | walking | running | sitting
+      target: null,          // { x, z } while walking/running toward a fixed point
+      dynamicTarget: null,   // null | 'ybot' | 'ybot_offset' — when set, the walk/run
+                              // target is re-resolved every frame from y-bot's *live*
+                              // position (see updateXBot) instead of a fixed point
+                              // baked in when the action was issued. Fixes x-bot
+                              // walking to a stale snapshot of where y-bot used to be.
+      dynamicOffsetKind: null, // 'flank' | 'front' — only used when dynamicTarget is 'ybot_offset'
+      dynamicOffsetSide: 1,    // +1 | -1 — only used when dynamicOffsetKind is 'flank'
+      dynamicOffsetDistance: 1.2, // offset distance for 'ybot_offset' targets — matches
+                              // XBOT_ESCORT_DISTANCE below; overridden per-action from
+                              // action.target.distance (e.g. hug uses a much closer distance)
+      pendingMoveId: null,   // set only for a walk/run that arrived via the live
+                              // /api/move_poll channel (a fixed-destination walk_to/
+                              // run_to call) — when non-null, real arrival (see
+                              // updateXBot's dist < XBOT_ARRIVE_EPS branch) POSTs to
+                              // /api/move_arrived so the backend's blocked tool call
+                              // can actually confirm it instead of guessing.
+      turnTarget: null,      // facing angle to ease toward when set and not moving
+      turnEaseRate: 10,      // shared easing rate for turnTarget — temporarily slowed
+                              // for the dance flourish's deliberate 180° turn, reset to
+                              // XBOT_TURN_EASE_DEFAULT once any turnTarget resolves
+      escortSide: null,      // +1 | -1 | null — which flank to hold while continuously
+                              // walking beside y-bot (see the 'escort' action below);
+                              // null means "not currently escorting"
+      escortPrevYBotPos: null, // y-bot's position last frame, for feed-forward velocity
+      currentSpeed: 0,       // actual measured ground speed this frame, drives leg cadence
+      walkPhase: 0,
+      moveBlend: 0,
+      waveUntil: 0,
+      hugUntil: 0,
+      hugBlend: 0,           // eased 0→1→0 envelope for easing arms in/out of the hug pose
+      sitBlend: 0,
+      blink: { timer: 0, phase: 0, next: 2 + Math.random() * 3 },
+      actionQueue: [],
+      busyWithMove: false,
+      heldBlock: null,       // name of the block currently being carried, or null
+      dancing: false,        // true while the retargeted dance clip is driving x-bot's
+                              // bones instead of applyXBotPose's hand-authored poses
+      danceMixer: null,      // THREE.AnimationMixer, created lazily on first dance
+      danceAction: null,     // THREE.AnimationAction for the current dance clip
+      danceFacingAngle: null, // x-bot's "normal" dance-facing angle, captured when the
+                              // dance starts — the flourish below turns 180° away from
+                              // this and back, rather than an ever-drifting reference
+      danceHomePos: null,    // {x, z} x-bot's anchor spot while dancing, captured when
+                              // the dance starts — x-bot doesn't otherwise move while
+                              // dancing, so this is just "stay here", with the flourish
+                              // stepping away from and back to it
+      danceTurnState: 'facing', // 'facing' | 'away' — which half of the turn-away cycle
+                              // x-bot is currently in (see updateXBot's scheduler)
+      danceNextTurnAt: 0,    // elapsed-clock time of the next scheduled turn-away
+      danceReturnAt: 0,      // elapsed-clock time to turn back, once turned away
+    };
+
+    // NOTE: must stay in sync with BESIDE_DISTANCE in app.py — that's the
+    // distance app.py used to decide which side is closer when walk_beside_ybot
+    // was called; this is the distance used every frame afterward to actually
+    // hold that side as y-bot moves.
+    const XBOT_ESCORT_DISTANCE = 1.2;
+
+    // Distance y-bot holds directly in front of x-bot (facing them) when
+    // joining a dance via F, instead of flanking at XBOT_ESCORT_DISTANCE —
+    // closer, since "dancing together" reads as face-to-face, not side-by-side.
+    const XBOT_DANCE_JOIN_DISTANCE = 0.85;
+
+    // Default turnTarget easing rate, shared by look_at/rotate/arrival turns —
+    // named so the dance flourish (which uses a slower rate) can restore it.
+    const XBOT_TURN_EASE_DEFAULT = 10;
+
+    // The periodic "turn away" flourish x-bot does while dancing: every
+    // XBOT_DANCE_TURN_INTERVAL seconds (continuously — the clock doesn't wait
+    // for the previous hold to finish), x-bot turns 180° away from its normal
+    // dance-facing direction, holds for a random XBOT_DANCE_TURN_HOLD_MIN–MAX
+    // seconds, then turns back. XBOT_DANCE_TURN_EASE is deliberately slower
+    // than XBOT_TURN_EASE_DEFAULT so the 180° turn reads as a dance move
+    // rather than a snap. If y-bot is dancing along, x-bot also steps in to
+    // XBOT_DANCE_CLOSE_DISTANCE while turned away (eased at
+    // XBOT_DANCE_POS_EASE) and steps back out when it turns back — y-bot
+    // itself never moves during any of this (see yBotDanceAnchor).
+    const XBOT_DANCE_TURN_INTERVAL = 50;
+    const XBOT_DANCE_TURN_HOLD_MIN = 5;
+    const XBOT_DANCE_TURN_HOLD_MAX = 15;
+    const XBOT_DANCE_CLOSE_DISTANCE = 0.6;
+    const XBOT_DANCE_TURN_EASE = 2.2;
+    const XBOT_DANCE_POS_EASE = 2.5;
+
+    // Simple XZ-plane character collision: x-bot is rooted (never moved by
+    // this), y-bot is hard-stopped from moving inside MIN_SEPARATION of it.
+    // MIN_SEPARATION is kept comfortably below XBOT_ESCORT_DISTANCE /
+    // BESIDE_DISTANCE (both 1.2m) so resolution never fights the intentional
+    // "stand/sit beside" or "facing" positioning driven from app.py — those
+    // distances are already outside collision range.
+    const CHARACTER_RADIUS = 0.12;
+    const MIN_SEPARATION = CHARACTER_RADIUS * 2;
+
+    // ─────────────────────────────────────────────
+    // Dance animation — retargets a Mixamo mocap FBX (bone rotation/position
+    // curves only, no mesh — a "motion-only" clip built for exactly this kind
+    // of retargeting) onto whichever VRM humanoid is dancing.
+    //
+    // This is the standard technique @pixiv/three-vrm's own examples use
+    // (their loadMixamoAnimation sample): map each Mixamo bone name to the
+    // matching VRM "normalized" humanoid bone name, correct each keyframe's
+    // rotation for the difference between the two rigs' rest poses, and hand
+    // the result to a THREE.AnimationMixer. Crucially, getNormalizedBoneNode
+    // returns the exact same bone nodes applyXBotPose/updateLocomotion
+    // already drive by hand every frame via setBoneOn — so a mixer playing a
+    // retargeted clip against those nodes is a drop-in replacement, not a
+    // parallel animation system. While dancing, those two pose functions
+    // just skip their own bone-setting and let mixer.update(delta) do it
+    // instead (see the top of each).
+    // ─────────────────────────────────────────────
+    const DANCE_FBX_URL = '/static/animations/rumba-dancing.fbx';
+
+    // Mixamo bone name (FBXLoader strips the "mixamorig:" colon when it
+    // sanitizes node names, so these come through as e.g. "mixamorigHips")
+    // -> VRM 1.0 humanoid bone name. Mixamo's 4-segment fingers have no VRM
+    // equivalent for the 4th/tip segment (VRM only has Proximal/Intermediate/
+    // Distal, or Metacarpal/Proximal/Distal for thumbs) — those tracks are
+    // simply left unmapped and get skipped during retargeting below.
+    const MIXAMO_VRM_BONE_MAP = {
+      mixamorigHips: 'hips',
+      mixamorigSpine: 'spine',
+      mixamorigSpine1: 'chest',
+      mixamorigSpine2: 'upperChest',
+      mixamorigNeck: 'neck',
+      mixamorigHead: 'head',
+      mixamorigLeftShoulder: 'leftShoulder',
+      mixamorigLeftArm: 'leftUpperArm',
+      mixamorigLeftForeArm: 'leftLowerArm',
+      mixamorigLeftHand: 'leftHand',
+      mixamorigLeftHandThumb1: 'leftThumbMetacarpal',
+      mixamorigLeftHandThumb2: 'leftThumbProximal',
+      mixamorigLeftHandThumb3: 'leftThumbDistal',
+      mixamorigLeftHandIndex1: 'leftIndexProximal',
+      mixamorigLeftHandIndex2: 'leftIndexIntermediate',
+      mixamorigLeftHandIndex3: 'leftIndexDistal',
+      mixamorigLeftHandMiddle1: 'leftMiddleProximal',
+      mixamorigLeftHandMiddle2: 'leftMiddleIntermediate',
+      mixamorigLeftHandMiddle3: 'leftMiddleDistal',
+      mixamorigLeftHandRing1: 'leftRingProximal',
+      mixamorigLeftHandRing2: 'leftRingIntermediate',
+      mixamorigLeftHandRing3: 'leftRingDistal',
+      mixamorigLeftHandPinky1: 'leftLittleProximal',
+      mixamorigLeftHandPinky2: 'leftLittleIntermediate',
+      mixamorigLeftHandPinky3: 'leftLittleDistal',
+      mixamorigRightShoulder: 'rightShoulder',
+      mixamorigRightArm: 'rightUpperArm',
+      mixamorigRightForeArm: 'rightLowerArm',
+      mixamorigRightHand: 'rightHand',
+      mixamorigRightHandThumb1: 'rightThumbMetacarpal',
+      mixamorigRightHandThumb2: 'rightThumbProximal',
+      mixamorigRightHandThumb3: 'rightThumbDistal',
+      mixamorigRightHandIndex1: 'rightIndexProximal',
+      mixamorigRightHandIndex2: 'rightIndexIntermediate',
+      mixamorigRightHandIndex3: 'rightIndexDistal',
+      mixamorigRightHandMiddle1: 'rightMiddleProximal',
+      mixamorigRightHandMiddle2: 'rightMiddleIntermediate',
+      mixamorigRightHandMiddle3: 'rightMiddleDistal',
+      mixamorigRightHandRing1: 'rightRingProximal',
+      mixamorigRightHandRing2: 'rightRingIntermediate',
+      mixamorigRightHandRing3: 'rightRingDistal',
+      mixamorigRightHandPinky1: 'rightLittleProximal',
+      mixamorigRightHandPinky2: 'rightLittleIntermediate',
+      mixamorigRightHandPinky3: 'rightLittleDistal',
+      mixamorigLeftUpLeg: 'leftUpperLeg',
+      mixamorigLeftLeg: 'leftLowerLeg',
+      mixamorigLeftFoot: 'leftFoot',
+      mixamorigLeftToeBase: 'leftToes',
+      mixamorigRightUpLeg: 'rightUpperLeg',
+      mixamorigRightLeg: 'rightLowerLeg',
+      mixamorigRightFoot: 'rightFoot',
+      mixamorigRightToeBase: 'rightToes',
+    };
+
+    // The raw FBX only ever needs to be fetched/parsed once and is shared;
+    // each VRM avatar that dances gets its own retargeted clip (cached per
+    // VRM instance, since x-bot and y-bot have different bone proportions
+    // and rest poses) built from that same shared asset.
+    let mixamoDanceAssetPromise = null;
+    function loadMixamoDanceAsset() {
+      if (!mixamoDanceAssetPromise) {
+        mixamoDanceAssetPromise = new FBXLoader().loadAsync(DANCE_FBX_URL);
+      }
+      return mixamoDanceAssetPromise;
+    }
+
+    const danceClipCache = new WeakMap();
+    function getRetargetedDanceClip(vrm) {
+      if (danceClipCache.has(vrm)) return danceClipCache.get(vrm);
+      const promise = loadMixamoDanceAsset().then((asset) => retargetMixamoClip(asset, vrm));
+      danceClipCache.set(vrm, promise);
+      return promise;
+    }
+
+    function retargetMixamoClip(asset, vrm) {
+      const clip = THREE.AnimationClip.findByName(asset.animations, 'mixamo.com') || asset.animations[0];
+      if (!clip) throw new Error('No animation clip found in dance FBX');
+
+      const tracks = [];
+      const restRotationInverse = new THREE.Quaternion();
+      const parentRestWorldRotation = new THREE.Quaternion();
+      const quatTmp = new THREE.Quaternion();
+      const vecTmp = new THREE.Vector3();
+
+      // The Hips position track is the only translated bone in a Mixamo mocap
+      // clip (everything else is rotation-only) — scale it by the ratio
+      // between this VRM's actual hip height and the Mixamo rig's, so a
+      // taller or shorter avatar doesn't get an exaggerated or tiny hip
+      // bounce relative to its own body.
+      const mixamoHips = asset.getObjectByName('mixamorigHips');
+      const motionHipsHeight = mixamoHips ? mixamoHips.position.y : 1;
+      const vrmHipsBone = vrm.humanoid?.getNormalizedBoneNode('hips');
+      const vrmHipsY = vrmHipsBone ? vrmHipsBone.getWorldPosition(vecTmp).y : 0;
+      const vrmRootY = vrm.scene.getWorldPosition(vecTmp).y;
+      const vrmHipsHeight = Math.abs(vrmHipsY - vrmRootY) || motionHipsHeight;
+      const hipsPositionScale = vrmHipsHeight / motionHipsHeight;
+
+      // Legacy VRM0 avatars face +Z instead of VRM1's -Z (the same 180°
+      // difference modelYawOffset already corrects for elsewhere) — mirror
+      // the retargeted rotations/positions to match.
+      const isVrm0 = vrm.meta?.metaVersion === '0' || vrm.meta?.metaVersion === '0.0';
+
+      clip.tracks.forEach((track) => {
+        const [mixamoRigName, propertyName] = track.name.split('.');
+        const vrmBoneName = MIXAMO_VRM_BONE_MAP[mixamoRigName];
+        if (!vrmBoneName) return; // fingertip end-bones etc. — no VRM equivalent
+
+        const vrmBoneNode = vrm.humanoid?.getNormalizedBoneNode(vrmBoneName);
+        const mixamoRigNode = asset.getObjectByName(mixamoRigName);
+        if (!vrmBoneNode || !mixamoRigNode) return;
+
+        if (track instanceof THREE.QuaternionKeyframeTrack) {
+          mixamoRigNode.getWorldQuaternion(restRotationInverse).invert();
+          if (mixamoRigNode.parent) mixamoRigNode.parent.getWorldQuaternion(parentRestWorldRotation);
+          else parentRestWorldRotation.identity();
+
+          const values = track.values.slice();
+          for (let i = 0; i < values.length; i += 4) {
+            quatTmp.fromArray(values, i);
+            quatTmp.premultiply(parentRestWorldRotation).multiply(restRotationInverse);
+            if (isVrm0) { quatTmp.x *= -1; quatTmp.z *= -1; }
+            quatTmp.toArray(values, i);
+          }
+          tracks.push(new THREE.QuaternionKeyframeTrack(`${vrmBoneNode.name}.${propertyName}`, track.times, values));
+        } else if (track instanceof THREE.VectorKeyframeTrack) {
+          const values = track.values.map((v, i) => (isVrm0 && i % 3 !== 1 ? -v : v) * hipsPositionScale);
+          tracks.push(new THREE.VectorKeyframeTrack(`${vrmBoneNode.name}.${propertyName}`, track.times, values));
+        }
+      });
+
+      return new THREE.AnimationClip('dance', clip.duration, tracks);
+    }
+
+    function playDanceClip(mixer, clip) {
+      const action = mixer.clipAction(clip);
+      action.setLoop(THREE.LoopRepeat, Infinity);
+      action.reset().play();
+      return action;
+    }
+
+    async function startXBotDance() {
+      if (!xBot.vrm) return;
+      xBot.dancing = true; // set immediately so applyXBotPose stops posing while the clip loads
+      // Mirrors the sit/stand pattern (case 'sit': xBot.status = 'sitting')
+      // so 'dancing' flows through to the backend exactly like every other
+      // pose already does — xbot_pose_label() passes any non-idle status
+      // through verbatim, and this xbot.status field is what's actually
+      // sent as part of the per-turn state, so no backend change is needed
+      // for x-bot's side of this.
+      xBot.status = 'dancing';
+      // Anchor the turn-away flourish (see updateXBot) to wherever x-bot
+      // happens to be facing/standing right now — it doesn't matter whether
+      // the clip has loaded yet, since these don't depend on it.
+      xBot.danceFacingAngle = xBot.facingAngle;
+      xBot.danceHomePos = { x: xBot.pos.x, z: xBot.pos.z };
+      xBot.danceTurnState = 'facing';
+      xBot.danceNextTurnAt = clock.getElapsedTime() + XBOT_DANCE_TURN_INTERVAL;
+      xBot.danceReturnAt = 0;
+      try {
+        const clip = await getRetargetedDanceClip(xBot.vrm);
+        if (!xBot.dancing) return; // stopped again before the clip finished loading
+        if (!xBot.danceMixer) xBot.danceMixer = new THREE.AnimationMixer(xBot.vrm.scene);
+        if (xBot.danceAction) xBot.danceAction.stop();
+        xBot.danceAction = playDanceClip(xBot.danceMixer, clip);
+      } catch (err) {
+        console.error('Failed to load dance animation for x-bot:', err);
+        xBot.dancing = false;
+        xBot.status = 'idle';
+      }
+    }
+
+    function stopXBotDance() {
+      if (xBot.danceAction) xBot.danceAction.stop();
+      xBot.dancing = false;
+      xBot.status = 'idle';
+      xBot.danceFacingAngle = null;
+      xBot.danceHomePos = null;
+      xBot.danceTurnState = 'facing';
+      xBot.danceNextTurnAt = 0;
+      xBot.danceReturnAt = 0;
+      xBot.turnEaseRate = XBOT_TURN_EASE_DEFAULT;
+    }
+
+    async function startYBotDance() {
+      if (!currentVrm) return;
+      yBotDancing = true;
+      try {
+        const clip = await getRetargetedDanceClip(currentVrm);
+        if (!yBotDancing) return;
+        if (!yBotDanceMixer) yBotDanceMixer = new THREE.AnimationMixer(currentVrm.scene);
+        if (yBotDanceAction) yBotDanceAction.stop();
+        yBotDanceAction = playDanceClip(yBotDanceMixer, clip);
+      } catch (err) {
+        console.error('Failed to load dance animation for y-bot:', err);
+        yBotDancing = false;
+      }
+    }
+
+    function stopYBotDance() {
+      if (yBotDanceAction) yBotDanceAction.stop();
+      yBotDancing = false;
+      yBotDanceFacingAngle = null;
+      yBotDanceAnchor = null;
+    }
+
+    function setBoneOn(vrm, name, x = 0, y = 0, z = 0) {
+      const bone = vrm?.humanoid?.getNormalizedBoneNode(name);
+      if (bone) bone.rotation.set(x, y, z);
+    }
+
+    function updateBlinkOn(vrm, blinkState, delta) {
+      if (!vrm?.expressionManager) return;
+      blinkState.timer += delta;
+      if (blinkState.phase === 0) {
+        if (blinkState.timer >= blinkState.next) { blinkState.phase = 1; blinkState.timer = 0; }
+      } else {
+        const dur = 0.15;
+        const t = blinkState.timer / dur;
+        let v = 0;
+        if (t < 0.5) v = t * 2;
+        else if (t < 1) v = (1 - t) * 2;
+        else { v = 0; blinkState.phase = 0; blinkState.timer = 0; blinkState.next = 2 + Math.random() * 4; }
+        try { vrm.expressionManager.setValue('blink', v); } catch (e) {}
+      }
+    }
+
+    function loadXBotVrm(url, displayName) {
+      const loader2 = new GLTFLoader();
+      loader2.register((parser) => new VRMLoaderPlugin(parser));
+      loader2.load(
+        url,
+        (gltf) => {
+          const vrm = gltf.userData.vrm;
+          if (!vrm) return;
+          try { VRMUtils.removeUnnecessaryVertices(vrm.scene); } catch (e) {}
+          try { VRMUtils.combineSkeletons(vrm.scene); } catch (e) {}
+          vrm.scene.traverse((obj) => { if (obj.isMesh) { obj.castShadow = true; obj.receiveShadow = true; } });
+
+          const metaVersion = vrm.meta?.metaVersion ?? vrm.meta?.version ?? 'unknown';
+          xBot.yawOffset = (metaVersion === '0' || metaVersion === '0.0') ? Math.PI : 0;
+
+          vrm.scene.position.set(xBot.pos.x, heightAt(xBot.pos.x, xBot.pos.z), xBot.pos.z);
+          vrm.scene.rotation.set(0, xBot.facingAngle + (xBot.yawOffset || 0), 0);
+          scene.add(vrm.scene);
+          xBot.vrm = vrm;
+          // Defensive reset in case this ever runs again (e.g. a fallback
+          // reload) while a dance from the previous VRM instance was active —
+          // that mixer/clip belonged to a scene graph that's gone now.
+          xBot.dancing = false;
+          xBot.danceMixer = null;
+          xBot.danceAction = null;
+
+          if (vrm.springBoneManager) {
+            vrm.springBoneManager.joints.forEach((joint) => { joint.center = vrm.scene; });
+            vrm.springBoneManager.setInitState();
+          }
+
+          console.log('x-bot loaded:', displayName);
+        },
+        undefined,
+        (err) => {
+          console.warn('x-bot VRM failed to load from', url, err?.message);
+          if (url !== SAMPLE_URL) {
+            console.warn('Falling back to sample VRM for x-bot.');
+            loadXBotVrm(SAMPLE_URL, 'sample (fallback for x-bot)');
+          }
+        }
+      );
+    }
+
+    function xBotApplyAction(action) {
+      // Any command other than escort itself ends continuous following —
+      // matches the backend's "any new command stops it" contract.
+      if (action.type !== 'escort') {
+        xBot.escortSide = null;
+      }
+      // Same idea for dance: it's a persistent status (like sitting), not a
+      // one-shot gesture, so any other command ends it — including a fresh
+      // 'dance' action itself restarting cleanly via stopXBotDance() below.
+      if (action.type !== 'dance' && xBot.dancing) {
+        stopXBotDance();
+        if (yBotDancing) { yBotAttached = false; stopYBotDance(); } // y-bot can't keep dancing alone
+      }
+      switch (action.type) {
+        case 'dance':
+          startXBotDance();
+          break;
+        case 'stop_dance':
+          stopXBotDance();
+          if (yBotDancing) { yBotAttached = false; stopYBotDance(); }
+          break;
+        case 'walk':
+        case 'run':
+          // action.target comes in one of three shapes:
+          //  - {x, z}: a fixed point (a location, or raw coordinates) — resolved once, as before.
+          //  - "y-bot": walk straight toward y-bot's current position — re-resolved every
+          //    frame in updateXBot, not baked in here, since y-bot may keep moving during
+          //    the walk (that's the "stale target" fix: app.py never sends a frozen
+          //    snapshot of y-bot's coordinates for this case).
+          //  - {dynamic: "ybot_offset", kind, side?}: a flank/front offset from y-bot's
+          //    live position+heading (from stand/sit_side_by_side / stand/sit_facing) —
+          //    also re-resolved every frame, same reasoning.
+          if (action.target === 'y-bot') {
+            xBot.dynamicTarget = 'ybot';
+            xBot.target = null;
+          } else if (action.target && action.target.dynamic === 'ybot_offset') {
+            xBot.dynamicTarget = 'ybot_offset';
+            xBot.dynamicOffsetKind = action.target.kind;
+            xBot.dynamicOffsetSide = action.target.side || 1;
+            xBot.dynamicOffsetDistance = action.target.distance || XBOT_ESCORT_DISTANCE;
+            xBot.target = null;
+          } else {
+            xBot.dynamicTarget = null;
+            xBot.target = action.target;
+          }
+          // Only actions dispatched through /api/move_poll carry a moveId —
+          // batched actions (dynamic y-bot chases, compound helpers like
+          // stand_beside) don't, and shouldn't trigger an arrival POST, so
+          // this always resets to whatever (if anything) this action has.
+          xBot.pendingMoveId = action.moveId != null ? action.moveId : null;
+          xBot.status = action.type === 'run' ? 'running' : 'walking';
+          break;
+        case 'sit':
+          xBot.status = 'sitting';
+          break;
+        case 'stand':
+          xBot.status = 'idle';
+          break;
+        case 'wave':
+          xBot.waveUntil = performance.now() + 4400; // 2x original duration, per request
+          break;
+        case 'hug':
+          xBot.hugUntil = performance.now() + 2600;
+          break;
+        case 'pick_up_block':
+          xBot.heldBlock = action.block;
+          break;
+        case 'put_down_block':
+        case 'stack_block': {
+          const entry = blocks[action.block];
+          if (entry) {
+            const groundY = heightAt(action.x, action.z);
+            entry.mesh.position.set(action.x, groundY + action.y + BLOCK_SIZE / 2, action.z);
+            entry.mesh.rotation.set(0, 0, 0);
+          }
+          xBot.heldBlock = null;
+          break;
+        }
+        case 'escort':
+          xBot.escortSide = action.side;
+          xBot.escortPrevYBotPos = null; // avoid a stale-position velocity spike on restart
+          xBot.target = null; // don't let a stale one-shot target fight the escort logic
+          xBot.dynamicTarget = null; // same — a pending dynamic walk/offset target shouldn't fight escort either
+          // If y-bot was riding attached to x-bot, x-bot committing to escort
+          // (following y-bot) would mean both directions are coupled to each
+          // other's live position at once — a feedback loop, and the actual
+          // cause of movement getting stuck until F was pressed manually.
+          // x-bot taking over as follower here is exactly the signal that
+          // y-bot should be freed, so do that automatically instead of
+          // waiting on the player to notice and detach themselves.
+          yBotAttached = false;
+          couplingHintDismissed = false;
+          couplingHintShownAt = performance.now();
+          break;
+        case 'turn':
+          // action.angle is either a plain number (unchanged) or a dynamic
+          // descriptor from stand/sit_side_by_side ('match_ybot_facing') or
+          // stand/sit_facing ('face_ybot'). Dynamic angles are resolved here,
+          // live, at the moment the turn is actually applied (i.e. once the
+          // preceding walk has arrived and this action is dequeued) — not
+          // back when app.py built the action — so x-bot ends up facing
+          // however y-bot is actually oriented right now, not however they
+          // were oriented when the tool was called.
+          if (action.angle && typeof action.angle === 'object') {
+            if (action.angle.dynamic === 'match_ybot_facing') {
+              xBot.turnTarget = facingAngle; // y-bot's current live facing
+            } else if (action.angle.dynamic === 'face_ybot' && currentVrm) {
+              const ybPos = currentVrm.scene.position;
+              xBot.turnTarget = Math.atan2(ybPos.x - xBot.pos.x, ybPos.z - xBot.pos.z);
+            } else {
+              xBot.turnTarget = xBot.facingAngle; // unresolvable — hold current facing
+            }
+          } else {
+            xBot.turnTarget = action.angle;
+          }
+          break;
+      }
+    }
+
+    // Actions are queued and drained one at a time so a compound instruction
+    // like "walk to Location-1 and sit" plays out in the right order: the
+    // sit doesn't fire until the walk has actually arrived.
+    function xBotQueueActions(actions) {
+      xBot.actionQueue.push(...actions);
+      xBotDrainQueue();
+    }
+    function xBotDrainQueue() {
+      if (xBot.busyWithMove || xBot.actionQueue.length === 0) return;
+      const action = xBot.actionQueue.shift();
+      xBotApplyAction(action);
+      if (action.type === 'walk' || action.type === 'run') {
+        xBot.busyWithMove = true;
+      } else {
+        setTimeout(xBotDrainQueue, 350);
+      }
+    }
+
+    const XBOT_MOVE_SPEED = 2.6;
+    const XBOT_RUN_MULT = 2.1;
+    const XBOT_ARRIVE_EPS = 0.15;
+    // How far short of y-bot's exact spot a plain walk_to/run_to "y-bot" stops.
+    // Comfortably beyond MIN_SEPARATION (0.24m) so x-bot settles into a stable
+    // stopping point instead of forever driving into y-bot's collision radius,
+    // getting shoved back by resolveCharacterCollision, re-aiming at y-bot's
+    // (now-shoved) live position, and closing the gap again — the infinite
+    // push loop. Deliberately closer than BESIDE_DISTANCE (1.2m, the
+    // considered stand-beside/facing spacing) since a plain "walk over here"
+    // has no facing/positioning intent behind it, just "stop near them".
+    const XBOT_WALK_TO_YBOT_STOP_DISTANCE = 0.9;
+    const XBOT_ESCORT_STROLL_MULT = 0.6;  // relaxed correction pace while holding position beside y-bot
+    const XBOT_ESCORT_CATCHUP_DIST = 1.0; // beyond this gap, hustle (faster than y-bot's max pace) to catch up
+
+    function applyXBotPose(delta, elapsed) {
+      const vrm = xBot.vrm;
+      if (!vrm?.humanoid) return;
+
+      if (xBot.dancing) {
+        // The retargeted mocap clip drives every bone this function would
+        // otherwise set by hand — get out of its way entirely while active.
+        if (xBot.danceMixer) xBot.danceMixer.update(delta);
+        return;
+      }
+
+      if (xBot.status === 'sitting') {
+        xBot.sitBlend += (1 - xBot.sitBlend) * (1 - Math.exp(-8 * delta));
+      } else {
+        xBot.sitBlend += (0 - xBot.sitBlend) * (1 - Math.exp(-8 * delta));
+      }
+
+      const waving = performance.now() < xBot.waveUntil;
+      const hugging = performance.now() < xBot.hugUntil;
+      // Eased envelope (rather than a hard on/off flag) so the arms swing
+      // into and out of the embrace smoothly instead of snapping — a hug is
+      // a held pose, not a repeating gesture like the wave's arm wiggle.
+      xBot.hugBlend += ((hugging ? 1 : 0) - xBot.hugBlend) * (1 - Math.exp(-6 * delta));
+      const speed = xBot.sitBlend < 0.5 ? xBot.currentSpeed : 0;
+      const moving = speed > 0.15 && xBot.sitBlend < 0.5;
+      const targetBlend = moving ? 1 : 0;
+      xBot.moveBlend += (targetBlend - xBot.moveBlend) * (1 - Math.exp(-9 * delta));
+
+      let legSwing = 0, kneeBendL = 0, kneeBendR = 0;
+      if (xBot.moveBlend > 0.001) {
+        xBot.walkPhase += speed * delta * 3.2;
+        legSwing = Math.sin(xBot.walkPhase);
+        kneeBendL = Math.max(0, -Math.cos(xBot.walkPhase)) * 0.85;
+        kneeBendR = Math.max(0, -Math.cos(xBot.walkPhase + Math.PI)) * 0.85;
+      }
+      const breath = Math.sin(elapsed * 2.2);
+      const idleArmZ = 0.06;
+      const ARM_REST_Z = -1.3;
+
+      // Idle / walk legs, blended with a seated pose.
+      const sitHipX = -1.35, sitKnee = 1.55;
+      setBoneOn(vrm, 'hips', 0, 0, 0);
+      setBoneOn(vrm, 'leftUpperLeg',
+        THREE.MathUtils.lerp(legSwing * 0.42 * xBot.moveBlend, sitHipX, xBot.sitBlend), 0, 0);
+      setBoneOn(vrm, 'rightUpperLeg',
+        THREE.MathUtils.lerp(-legSwing * 0.42 * xBot.moveBlend, sitHipX, xBot.sitBlend), 0, 0);
+      setBoneOn(vrm, 'leftLowerLeg',
+        THREE.MathUtils.lerp(kneeBendL * xBot.moveBlend, sitKnee, xBot.sitBlend), 0, 0);
+      setBoneOn(vrm, 'rightLowerLeg',
+        THREE.MathUtils.lerp(kneeBendR * xBot.moveBlend, sitKnee, xBot.sitBlend), 0, 0);
+
+      // Arms: idle sway / walk swing, overridden by a wave pose on the right
+      // arm, or — taking priority over both — an embrace pose on both arms
+      // while xBot.hugBlend is eased in. Reaching forward and curling in
+      // (rather than the wave's raise-and-shake) is what reads as "hug"
+      // rather than "greeting" at a glance.
+      // Note on how these two numbers combine: upperArm.x and lowerArm.x
+      // rotate around the same axis, so their effect on the forearm's final
+      // world angle is additive (confirmed against the wave pose, where
+      // -1.9 + 1.3 ≈ -0.6, i.e. near-vertical with a forward lean — matches
+      // "hand near head"). 0 = hanging straight down, -π/2 (-1.57) =
+      // horizontal. So to land the forearm at horizontal, HUG_ARM_X +
+      // HUG_LOWER_ARM must sum to roughly -1.5. Raising mostly from the
+      // shoulder with the elbow nearly straight gets there predictably;
+      // relying on a big elbow curl (like wave does) would fight the
+      // shoulder raise instead of adding to it.
+      const HUG_ARM_X = -1.5;       // raise from the shoulder, most of the way to horizontal
+      const HUG_ARM_Y = 0.4;        // rotate inward across the body (adduction)
+      const HUG_LOWER_ARM = 0.05;   // keep the elbow nearly straight so it doesn't cancel the raise
+
+      const leftUpperArmX = -legSwing * 0.4 * xBot.moveBlend;
+      const leftUpperArmZ = ARM_REST_Z + THREE.MathUtils.lerp(idleArmZ, 0.15, xBot.moveBlend);
+      setBoneOn(vrm, 'leftUpperArm',
+        THREE.MathUtils.lerp(leftUpperArmX, HUG_ARM_X, xBot.hugBlend),
+        THREE.MathUtils.lerp(0, -HUG_ARM_Y, xBot.hugBlend),
+        THREE.MathUtils.lerp(leftUpperArmZ, ARM_REST_Z, xBot.hugBlend));
+      setBoneOn(vrm, 'leftLowerArm',
+        THREE.MathUtils.lerp(THREE.MathUtils.lerp(0, 0.45, xBot.moveBlend), HUG_LOWER_ARM, xBot.hugBlend), 0, 0);
+
+      // Wave pose sourced from a captured, more natural reference pose
+      // (degrees, converted to radians below) rather than hand-tuned values.
+      // Per that reference, only rightHand.y oscillates during the wave —
+      // everything else (including rightLowerArm, which previously had a
+      // hardcoded sine wiggle on X) now holds a static angle.
+      const WAVE_UPPER_ARM = {
+        x: THREE.MathUtils.degToRad(-3), y: THREE.MathUtils.degToRad(-5), z: THREE.MathUtils.degToRad(14),
+      };
+      const WAVE_LOWER_ARM = {
+        x: THREE.MathUtils.degToRad(21), y: THREE.MathUtils.degToRad(89), z: THREE.MathUtils.degToRad(-76),
+      };
+      const WAVE_HAND = {
+        x: THREE.MathUtils.degToRad(-6), y: THREE.MathUtils.degToRad(-6), z: THREE.MathUtils.degToRad(-9),
+      };
+      const WAVE_HAND_Y_OSC = { ampRad: THREE.MathUtils.degToRad(20), speed: 6, phaseRad: THREE.MathUtils.degToRad(0) };
+
+      let rightUpperArmX, rightUpperArmY, rightUpperArmZ;
+      let rightLowerArmX, rightLowerArmY, rightLowerArmZ;
+      let rightHandX, rightHandY, rightHandZ;
+      if (waving) {
+        rightUpperArmX = WAVE_UPPER_ARM.x; rightUpperArmY = WAVE_UPPER_ARM.y; rightUpperArmZ = WAVE_UPPER_ARM.z;
+        rightLowerArmX = WAVE_LOWER_ARM.x; rightLowerArmY = WAVE_LOWER_ARM.y; rightLowerArmZ = WAVE_LOWER_ARM.z;
+        const handWaveT = elapsed * WAVE_HAND_Y_OSC.speed;
+        rightHandX = WAVE_HAND.x;
+        rightHandY = WAVE_HAND.y + Math.sin(handWaveT + WAVE_HAND_Y_OSC.phaseRad) * WAVE_HAND_Y_OSC.ampRad;
+        rightHandZ = WAVE_HAND.z;
+      } else {
+        rightUpperArmX = legSwing * 0.4 * xBot.moveBlend;
+        rightUpperArmY = 0;
+        rightUpperArmZ = -(ARM_REST_Z + THREE.MathUtils.lerp(idleArmZ, 0.15, xBot.moveBlend));
+        rightLowerArmX = THREE.MathUtils.lerp(0, 0.45, xBot.moveBlend);
+        rightLowerArmY = 0;
+        rightLowerArmZ = 0;
+        rightHandX = 0; rightHandY = 0; rightHandZ = 0;
+      }
+      setBoneOn(vrm, 'rightUpperArm',
+        THREE.MathUtils.lerp(rightUpperArmX, HUG_ARM_X, xBot.hugBlend),
+        THREE.MathUtils.lerp(rightUpperArmY, HUG_ARM_Y, xBot.hugBlend),
+        THREE.MathUtils.lerp(rightUpperArmZ, -ARM_REST_Z, xBot.hugBlend));
+      setBoneOn(vrm, 'rightLowerArm',
+        THREE.MathUtils.lerp(rightLowerArmX, HUG_LOWER_ARM, xBot.hugBlend),
+        THREE.MathUtils.lerp(rightLowerArmY, 0, xBot.hugBlend),
+        THREE.MathUtils.lerp(rightLowerArmZ, 0, xBot.hugBlend));
+      setBoneOn(vrm, 'rightHand',
+        THREE.MathUtils.lerp(rightHandX, 0, xBot.hugBlend),
+        THREE.MathUtils.lerp(rightHandY, 0, xBot.hugBlend),
+        THREE.MathUtils.lerp(rightHandZ, 0, xBot.hugBlend));
+
+      setBoneOn(vrm, 'chest', 0.05 * breath * (1 - xBot.sitBlend) * (1 - xBot.hugBlend), 0, 0);
+      setBoneOn(vrm, 'spine', 0.25 * xBot.sitBlend + 0.12 * xBot.hugBlend, 0, 0);
+      setBoneOn(vrm, 'head',
+        Math.sin(elapsed * 0.7) * 0.05 * (1 - xBot.sitBlend) * (1 - xBot.hugBlend) + 0.08 * xBot.hugBlend,
+        Math.sin(elapsed * 0.5) * 0.06 * (1 - xBot.hugBlend), 0);
+    }
+
+    function updateXBot(delta, elapsed) {
+      if (!xBot.vrm) return;
+
+      const startX = xBot.pos.x, startZ = xBot.pos.z;
+
+      // ─── Dance turn-away flourish ──────────────────────────────────────
+      // See the XBOT_DANCE_TURN_* constants above for the full picture.
+      // Runs regardless of whether y-bot has joined; the position-closing
+      // part below is simply skipped (targetX/Z just stay at danceHomePos)
+      // when dancing solo, since there's no yBotDanceAnchor to step toward.
+      if (xBot.dancing && xBot.danceFacingAngle !== null) {
+        if (xBot.danceTurnState === 'facing' && elapsed >= xBot.danceNextTurnAt) {
+          xBot.danceTurnState = 'away';
+          xBot.turnTarget = xBot.danceFacingAngle + Math.PI;
+          xBot.turnEaseRate = XBOT_DANCE_TURN_EASE;
+          xBot.danceReturnAt = elapsed
+            + XBOT_DANCE_TURN_HOLD_MIN
+            + Math.random() * (XBOT_DANCE_TURN_HOLD_MAX - XBOT_DANCE_TURN_HOLD_MIN);
+          // Continuous 50s clock: the next turn-away is scheduled 50s from
+          // when THIS one started, not from whenever it happens to finish —
+          // so the 5–15s random hold doesn't shift the overall rhythm.
+          xBot.danceNextTurnAt = elapsed + XBOT_DANCE_TURN_INTERVAL;
+        } else if (xBot.danceTurnState === 'away' && elapsed >= xBot.danceReturnAt) {
+          xBot.danceTurnState = 'facing';
+          xBot.turnTarget = xBot.danceFacingAngle;
+          xBot.turnEaseRate = XBOT_DANCE_TURN_EASE;
+          // danceNextTurnAt is already set (from the turn-away above) — left
+          // untouched here, since the 50s clock doesn't reset on return.
+        }
+
+        if (xBot.danceHomePos) {
+          let targetX = xBot.danceHomePos.x;
+          let targetZ = xBot.danceHomePos.z;
+          if (yBotDancing && yBotDanceAnchor && xBot.danceTurnState === 'away') {
+            const dx0 = xBot.danceHomePos.x - yBotDanceAnchor.x;
+            const dz0 = xBot.danceHomePos.z - yBotDanceAnchor.z;
+            const homeDist = Math.hypot(dx0, dz0);
+            if (homeDist > 1e-6) {
+              targetX = yBotDanceAnchor.x + (dx0 / homeDist) * XBOT_DANCE_CLOSE_DISTANCE;
+              targetZ = yBotDanceAnchor.z + (dz0 / homeDist) * XBOT_DANCE_CLOSE_DISTANCE;
+            }
+          }
+          const posEase = 1 - Math.exp(-XBOT_DANCE_POS_EASE * delta);
+          xBot.pos.x += (targetX - xBot.pos.x) * posEase;
+          xBot.pos.z += (targetZ - xBot.pos.z) * posEase;
+        }
+      }
+
+      const hasMoveTarget = xBot.dynamicTarget ? !!currentVrm : !!xBot.target;
+      if ((xBot.status === 'walking' || xBot.status === 'running') && hasMoveTarget) {
+        // For a dynamic target, re-derive (tx, tz) fresh every frame from
+        // y-bot's *current* live position/heading, rather than the fixed
+        // point used for a static xBot.target. This is what actually fixes
+        // the "stale target" bug: x-bot keeps re-aiming at where y-bot is
+        // right now, all the way up to arrival, instead of chasing a single
+        // coordinate snapshotted back when the tool call was made.
+        let tx, tz;
+        if (xBot.dynamicTarget === 'ybot') {
+          // Don't aim at y-bot's exact coordinates — stop short of them by
+          // XBOT_WALK_TO_YBOT_STOP_DISTANCE, offset back along the line from
+          // y-bot toward wherever x-bot currently is. Re-derived every frame
+          // (like the rest of this dynamic-target logic) so the stopping
+          // point slides around naturally as y-bot moves, rather than being
+          // a single point baked in at walk-start.
+          const ybX = currentVrm.scene.position.x, ybZ = currentVrm.scene.position.z;
+          const awayX = xBot.pos.x - ybX, awayZ = xBot.pos.z - ybZ;
+          const awayDist = Math.hypot(awayX, awayZ);
+          if (awayDist > 1e-6) {
+            tx = ybX + (awayX / awayDist) * XBOT_WALK_TO_YBOT_STOP_DISTANCE;
+            tz = ybZ + (awayZ / awayDist) * XBOT_WALK_TO_YBOT_STOP_DISTANCE;
+          } else {
+            // x-bot is (numerically) already coincident with y-bot and there's
+            // no "away from y-bot" direction to derive from its own position —
+            // fall back to its current facing so it still has somewhere to go.
+            tx = ybX + Math.sin(xBot.facingAngle) * XBOT_WALK_TO_YBOT_STOP_DISTANCE;
+            tz = ybZ + Math.cos(xBot.facingAngle) * XBOT_WALK_TO_YBOT_STOP_DISTANCE;
+          }
+        } else if (xBot.dynamicTarget === 'ybot_offset') {
+          const ybX = currentVrm.scene.position.x, ybZ = currentVrm.scene.position.z;
+          const bfx = Math.sin(facingAngle), bfz = Math.cos(facingAngle); // y-bot's live facing
+          const offsetDist = xBot.dynamicOffsetDistance || XBOT_ESCORT_DISTANCE;
+          if (xBot.dynamicOffsetKind === 'front') {
+            tx = ybX + bfx * offsetDist;
+            tz = ybZ + bfz * offsetDist;
+          } else { // 'flank'
+            const perpX = bfz, perpZ = -bfx;
+            tx = ybX + perpX * offsetDist * xBot.dynamicOffsetSide;
+            tz = ybZ + perpZ * offsetDist * xBot.dynamicOffsetSide;
+          }
+        } else {
+          tx = xBot.target.x;
+          tz = xBot.target.z;
+        }
+        const dx = tx - xBot.pos.x;
+        const dz = tz - xBot.pos.z;
+        const dist = Math.hypot(dx, dz);
+        if (dist < XBOT_ARRIVE_EPS) {
+          xBot.pos.x = tx;
+          xBot.pos.z = tz;
+          xBot.status = 'idle';
+          xBot.target = null;
+          xBot.dynamicTarget = null;
+          xBot.busyWithMove = false;
+          if (xBot.pendingMoveId != null) {
+            // Real, physical arrival — this is what unblocks the backend's
+            // waiting walk_to/run_to tool call. Fire-and-forget: if this
+            // fails the tool call just times out server-side instead of
+            // hanging forever.
+            fetch('/api/move_arrived', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ move_id: xBot.pendingMoveId, x: tx, z: tz }),
+            }).catch(() => {});
+            xBot.pendingMoveId = null;
+          }
+          setTimeout(xBotDrainQueue, 200);
+        } else {
+          const desiredAngle = Math.atan2(dx, dz);
+          let diff = desiredAngle - xBot.facingAngle;
+          diff = Math.atan2(Math.sin(diff), Math.cos(diff));
+          xBot.facingAngle += diff * Math.min(1, 10 * delta);
+          const speed = XBOT_MOVE_SPEED * (xBot.status === 'running' ? XBOT_RUN_MULT : 1);
+          const step = Math.min(speed * delta, dist);
+          xBot.pos.x += (dx / dist) * step;
+          xBot.pos.z += (dz / dist) * step;
+        }
+      } else if (xBot.turnTarget !== null) {
+        let diff = xBot.turnTarget - xBot.facingAngle;
+        diff = Math.atan2(Math.sin(diff), Math.cos(diff));
+        xBot.facingAngle += diff * Math.min(1, xBot.turnEaseRate * delta);
+        if (Math.abs(diff) < 0.02) {
+          xBot.turnTarget = null;
+          xBot.turnEaseRate = XBOT_TURN_EASE_DEFAULT; // restore the normal snappy rate for look_at/rotate/arrival turns
+        }
+      } else if (xBot.escortSide !== null && currentVrm && yBotMode !== 'ground') {
+        // Escort only knows how to walk x-bot across the ground toward
+        // y-bot's XZ position — it has no notion of altitude or submersion.
+        // If y-bot takes off or dives in, honoring the escort would mean
+        // x-bot trudging along the ground directly under/behind a flying or
+        // swimming y-bot, forever "walking" underwater or in midair. Auto-
+        // release instead, the same way the 'escort' action itself
+        // auto-detaches yBotAttached above: a coupling that can no longer
+        // be honored is dropped automatically rather than left stuck until
+        // the player notices and presses F.
+        xBot.escortSide = null;
+        xBot.status = 'idle';
+      } else if (xBot.escortSide !== null && currentVrm) {
+        // Continuous escort: unlike the branch above (which chases a single
+        // fixed xBot.target), this re-derives the target every frame from
+        // y-bot's *current* live position/heading, so x-bot keeps pace as
+        // y-bot moves instead of just walking to wherever y-bot used to be.
+        const ybPos = currentVrm.scene.position;
+        const ybX = ybPos.x, ybZ = ybPos.z;
+
+        // Feed-forward: copy y-bot's own instantaneous velocity exactly, so
+        // the gap can't grow just from y-bot walking along — only genuine
+        // positional error (drift, a turn, or having just started escorting)
+        // needs correcting below. Without this term, any correction speed
+        // that doesn't *exceed* y-bot's own speed can never actually close
+        // a gap against a target that keeps moving away at the same pace.
+        let yVelX = 0, yVelZ = 0;
+        if (xBot.escortPrevYBotPos && delta > 0) {
+          yVelX = (ybX - xBot.escortPrevYBotPos.x) / delta;
+          yVelZ = (ybZ - xBot.escortPrevYBotPos.z) / delta;
+        }
+        xBot.escortPrevYBotPos = { x: ybX, z: ybZ };
+
+        const bfx = Math.sin(facingAngle), bfz = Math.cos(facingAngle);
+        const perpX = bfz, perpZ = -bfx; // perpendicular to y-bot's facing
+        const tx = ybX + perpX * XBOT_ESCORT_DISTANCE * xBot.escortSide;
+        const tz = ybZ + perpZ * XBOT_ESCORT_DISTANCE * xBot.escortSide;
+        const dx = tx - xBot.pos.x;
+        const dz = tz - xBot.pos.z;
+        const dist = Math.hypot(dx, dz);
+        const yBotMoving = keys.fwd || keys.back;
+        const running = yBotMoving && keys.run;
+
+        if (dist > XBOT_ARRIVE_EPS) {
+          let correctionSpeed;
+          if (dist > XBOT_ESCORT_CATCHUP_DIST) {
+            // Well out of position (just started escorting, or y-bot spun
+            // around) — hustle faster than y-bot could possibly be moving,
+            // so the gap actually shrinks instead of just tracking it.
+            correctionSpeed = XBOT_MOVE_SPEED * XBOT_RUN_MULT * 1.2;
+          } else {
+            // Feed-forward already keeps pace; this is just a gentle,
+            // relaxed nudge back onto the exact flank position.
+            correctionSpeed = XBOT_MOVE_SPEED * XBOT_ESCORT_STROLL_MULT;
+          }
+          const step = Math.min(correctionSpeed * delta, dist);
+          xBot.pos.x += yVelX * delta + (dx / dist) * step;
+          xBot.pos.z += yVelZ * delta + (dz / dist) * step;
+          xBot.status = dist > XBOT_ESCORT_CATCHUP_DIST ? 'running' : (running ? 'running' : 'walking');
+
+          const facingTargetAngle = dist > XBOT_ESCORT_CATCHUP_DIST ? Math.atan2(dx, dz) : facingAngle;
+          let diff = facingTargetAngle - xBot.facingAngle;
+          diff = Math.atan2(Math.sin(diff), Math.cos(diff));
+          xBot.facingAngle += diff * Math.min(1, 10 * delta);
+        } else {
+          // Already on the mark: feed-forward alone keeps it glued beside
+          // y-bot, no correction term needed.
+          xBot.pos.x += yVelX * delta;
+          xBot.pos.z += yVelZ * delta;
+          const movingNow = (yVelX * yVelX + yVelZ * yVelZ) > 0.15 * 0.15;
+          xBot.status = movingNow ? (running ? 'running' : 'walking') : 'idle';
+          let diff = facingAngle - xBot.facingAngle;
+          diff = Math.atan2(Math.sin(diff), Math.cos(diff));
+          xBot.facingAngle += diff * Math.min(1, 10 * delta);
+        }
+      }
+
+      // Drive leg-animation cadence from x-bot's *actual* measured ground
+      // speed this frame, rather than a fixed table keyed off status — the
+      // escort branch above can move at speeds (feed-forward + correction)
+      // that don't correspond to any single fixed constant, so a table
+      // lookup would desync the footstep cadence from real displacement
+      // (visible as feet sliding instead of stepping).
+      xBot.currentSpeed = delta > 0 ? Math.hypot(xBot.pos.x - startX, xBot.pos.z - startZ) / delta : 0;
+
+      const groundY = heightAt(xBot.pos.x, xBot.pos.z);
+      const seatDrop = xBot.sitBlend * 0.35;
+      xBot.vrm.scene.position.set(xBot.pos.x, groundY - seatDrop, xBot.pos.z);
+      xBot.vrm.scene.rotation.set(0, xBot.facingAngle + (xBot.yawOffset || 0), 0);
+
+      updateHeldBlock();
+      applyXBotPose(delta, elapsed);
+      updateBlinkOn(xBot.vrm, xBot.blink, delta);
+      xBot.vrm.update(delta);
+    }
+
+    // x-bot is treated as rooted/immovable for collision purposes: it is
+    // never adjusted here, so it walks through y-bot uninterrupted if its
+    // own AI pathing takes it that way. y-bot is the only one collision
+    // affects: if this frame's movement (already applied by updateMovement,
+    // above) brought y-bot within MIN_SEPARATION of x-bot's current spot,
+    // y-bot is pushed back out along the line from x-bot to y-bot until it's
+    // exactly MIN_SEPARATION away — a sliding correction, not a hard revert.
+    //
+    // NOTE: this used to hard-revert y-bot to yBotPreMovePos (its position at
+    // the start of the frame) whenever it ended up too close. That works
+    // when y-bot approaches from outside the collision radius, but breaks
+    // completely once x-bot and y-bot land on the *exact same* coordinates
+    // (dist === 0, e.g. x-bot walks all the way onto y-bot's spot): every
+    // subsequent frame's movement — no matter how large — was measured from,
+    // and then discarded right back to, that same coincident point, so
+    // y-bot could never accumulate enough displacement to escape. Pushing
+    // out along the separation vector instead always lands y-bot at a valid,
+    // non-overlapping position in a single frame. When x-bot and y-bot are
+    // exactly coincident there's no separation vector to push along, so we
+    // fall back to the direction y-bot tried to move this frame, or failing
+    // that, y-bot's current facing — either way giving y-bot an escape route
+    // immediately rather than freezing it in place.
+    //
+    // Skipped during escort/attach, which already hold an exact,
+    // larger-than-collision-range offset every frame via their own
+    // correction math.
+    function resolveCharacterCollision() {
+      if (!currentVrm || !xBot.vrm) return;
+      if (yBotAttached || xBot.escortSide !== null) return;
+
+      const yPos = currentVrm.scene.position;
+      const xPos = xBot.vrm.scene.position;
+
+      let dx = yPos.x - xPos.x;
+      let dz = yPos.z - xPos.z;
+      let dist = Math.hypot(dx, dz);
+      if (dist >= MIN_SEPARATION) return;
+
+      if (dist < 1e-6) {
+        // Coincident (or numerically indistinguishable from it): there's no
+        // meaningful "away from x-bot" direction, so derive one instead from
+        // whatever y-bot was trying to do this frame.
+        const movedX = yPos.x - yBotPreMovePos.x;
+        const movedZ = yPos.z - yBotPreMovePos.z;
+        const movedDist = Math.hypot(movedX, movedZ);
+        if (movedDist > 1e-6) {
+          dx = movedX / movedDist;
+          dz = movedZ / movedDist;
+        } else {
+          dx = Math.sin(facingAngle);
+          dz = Math.cos(facingAngle);
+        }
+        dist = 1;
+      }
+
+      const nx = dx / dist;
+      const nz = dz / dist;
+      const targetX = xPos.x + nx * MIN_SEPARATION;
+      const targetZ = xPos.z + nz * MIN_SEPARATION;
+
+      // Preserve height above ground (covers flying/swimming altitude and
+      // sit-drop) rather than snapping to bare ground level. Camera/controls
+      // are nudged by the same delta so it doesn't lag a frame behind.
+      const yGroundOffset = yPos.y - heightAt(yPos.x, yPos.z);
+      const revertY = heightAt(targetX, targetZ) + yGroundOffset;
+
+      camera.position.x += targetX - yPos.x;
+      camera.position.y += revertY - yPos.y;
+      camera.position.z += targetZ - yPos.z;
+      controls.target.set(targetX, revertY + 1.1, targetZ);
+      prevAvatarPos.set(targetX, revertY, targetZ);
+
+      yPos.set(targetX, revertY, targetZ);
+    }
+
+    // ─────────────────────────────────────────────
+    // Character animation (y-bot)
+    // ─────────────────────────────────────────────
+    function setBone(name, x = 0, y = 0, z = 0) {
+      const bone = currentVrm?.humanoid?.getNormalizedBoneNode(name);
+      if (bone) bone.rotation.set(x, y, z);
+    }
+
+    function updateBlink(delta) {
+      if (!currentVrm?.expressionManager) return;
+      blinkTimer += delta;
+      if (blinkPhase === 0) {
+        if (blinkTimer >= nextBlinkTime) { blinkPhase = 1; blinkTimer = 0; }
+      } else {
+        const dur = 0.15;
+        const t = blinkTimer / dur;
+        let v = 0;
+        if (t < 0.5) v = t * 2;
+        else if (t < 1) v = (1 - t) * 2;
+        else { v = 0; blinkPhase = 0; blinkTimer = 0; nextBlinkTime = 2 + Math.random() * 4; }
+        try { currentVrm.expressionManager.setValue('blink', v); } catch (e) {}
+      }
+    }
+
+    function updateLocomotion(delta, signedSpeed, mode) {
+      if (!currentVrm?.humanoid) return;
+
+      if (yBotDancing) {
+        // Same idea as x-bot's dance early-return in applyXBotPose — the
+        // mocap clip owns every bone this function would otherwise pose.
+        if (yBotDanceMixer) yBotDanceMixer.update(delta);
+        return;
+      }
+
+      const speed = Math.abs(signedSpeed);
+      const t = clock.getElapsedTime();
+      const breath = Math.sin(t * 2.2);
+
+      if (mode === 'fly') {
+        moveBlend += (0 - moveBlend) * (1 - Math.exp(-POSE_BLEND_SMOOTH * delta));
+
+        const legBack = -0.15;
+        const kneeBend = 0.25;
+        setBone('leftUpperLeg', legBack, 0, -0.05);
+        setBone('rightUpperLeg', legBack, 0, 0.05);
+        setBone('leftLowerLeg', kneeBend, 0, 0);
+        setBone('rightLowerLeg', kneeBend, 0, 0);
+
+        setBone('leftUpperArm', -0.2, 0, ARM_REST_Z + 0.35 + breath * 0.02);
+        setBone('rightUpperArm', -0.2, 0, -(ARM_REST_Z + 0.35) - breath * 0.02);
+        setBone('leftLowerArm', 0.15, 0, 0);
+        setBone('rightLowerArm', 0.15, 0, 0);
+
+        setBone('hips', 0, 0, 0);
+        setBone('chest', 0.1, 0, 0);
+        setBone('spine', 0.05, 0, 0);
+        setBone('head', -currentPitch - 0.1, 0, 0);
+
+      } else if (mode === 'swim') {
+        moveBlend += (0 - moveBlend) * (1 - Math.exp(-POSE_BLEND_SMOOTH * delta));
+
+        const strokeRate = 0.6 + Math.min(1, speed / SWIM_SPEED) * 1.6;
+        swimPhase += delta * strokeRate + signedSpeed * delta * 0.4;
+        const stroke = Math.sin(swimPhase);
+        const kick = Math.sin(swimPhase * 2);
+
+        setBone('leftUpperLeg', 0.12 + kick * 0.18, 0, -0.04);
+        setBone('rightUpperLeg', 0.12 - kick * 0.18, 0, 0.04);
+        setBone('leftLowerLeg', 0.2 + Math.max(0, kick) * 0.25, 0, 0);
+        setBone('rightLowerLeg', 0.2 + Math.max(0, -kick) * 0.25, 0, 0);
+
+        setBone('leftUpperArm', -0.35 + stroke * 0.5, 0, ARM_REST_Z + 0.55 + breath * 0.02);
+        setBone('rightUpperArm', -0.35 - stroke * 0.5, 0, -(ARM_REST_Z + 0.55) - breath * 0.02);
+        setBone('leftLowerArm', 0.2 + Math.max(0, stroke) * 0.3, 0, 0);
+        setBone('rightLowerArm', 0.2 + Math.max(0, -stroke) * 0.3, 0, 0);
+
+        setBone('hips', 0, 0, 0);
+        setBone('chest', 0.16, 0, 0);
+        setBone('spine', 0.06, 0, 0);
+        setBone('head', -currentPitch - 0.08, 0, 0);
+
+      } else {
+        const moving = speed > 0.15 && !yBotSitting;
+        const targetBlend = moving ? 1 : 0;
+        moveBlend += (targetBlend - moveBlend) * (1 - Math.exp(-POSE_BLEND_SMOOTH * delta));
+
+        const sitTargetBlend = yBotSitting ? 1 : 0;
+        yBotSitBlend += (sitTargetBlend - yBotSitBlend) * (1 - Math.exp(-POSE_BLEND_SMOOTH * delta));
+
+        // Amplitudes and secondary motion below are tuned from sampling the
+        // bone curves in Walking.fbx (a Mixamo clip) — not a literal retarget
+        // (different skeleton/rest pose), but matched in spirit: a slightly
+        // narrower stride, more knee lift on the swing leg, a hip twist/roll
+        // that the torso counters, some elbow give instead of ramrod arms,
+        // and a light double-bounce through the torso each stride.
+        let legSwing = 0, kneeBendL = 0, kneeBendR = 0, legAmp = 0.42, armAmp = 0.4;
+        let walkChest = 0, walkSpine = 0, hipYaw = 0, hipRoll = 0, elbowSwing = 0;
+        if (moveBlend > 0.001) {
+          walkPhase += signedSpeed * delta * 3.2;
+          const runFactor = Math.min(1, speed / (MOVE_SPEED * RUN_MULT));
+          legAmp = 0.42 + runFactor * 0.18;
+          const kneeAmp = 0.85;
+          armAmp = 0.4 + runFactor * 0.22;
+
+          legSwing = Math.sin(walkPhase);
+          kneeBendL = Math.max(0, -Math.cos(walkPhase)) * kneeAmp;
+          kneeBendR = Math.max(0, -Math.cos(walkPhase + Math.PI)) * kneeAmp;
+
+          walkChest = 0.05 + runFactor * 0.08 + Math.sin(walkPhase * 2) * 0.015;
+          walkSpine = Math.sin(walkPhase * 2) * 0.035;
+
+          hipYaw = Math.sin(walkPhase) * 0.06;
+          hipRoll = Math.sin(walkPhase) * 0.045;
+          elbowSwing = Math.abs(legSwing) * 0.35;
+        }
+        const walkHead = -(walkChest + walkSpine) - 0.02;
+
+        const breath2 = Math.sin(t * 2.2 + 0.4);
+        const idleChest = breath2 * 0.04;
+        const idleSpine = breath * 0.03;
+        const idleHeadX = Math.sin(t * 0.7) * 0.05;
+        const idleHeadY = Math.sin(t * 0.5) * 0.06;
+        // Small adjustments layered on top of ARM_REST_Z (arms hanging at the
+        // sides), not the whole rotation — this is the piece that was missing
+        // before and left the arms stuck near T-pose the whole time.
+        const idleArmZ = 0.06;
+        const baseElbowBend = 0.45;
+
+        // Seated targets match x-bot's sit pose (sitHipX/sitKnee/spine lean,
+        // chest fading to neutral) — same proven look, applied here via
+        // yBotSitBlend instead of x-bot's sitBlend.
+        const sitHipX = -1.35, sitKnee = 1.55;
+        setBone('leftUpperLeg', THREE.MathUtils.lerp(legSwing * legAmp * moveBlend, sitHipX, yBotSitBlend), 0, 0);
+        setBone('rightUpperLeg', THREE.MathUtils.lerp(-legSwing * legAmp * moveBlend, sitHipX, yBotSitBlend), 0, 0);
+        setBone('leftLowerLeg', THREE.MathUtils.lerp(kneeBendL * moveBlend, sitKnee, yBotSitBlend), 0, 0);
+        setBone('rightLowerLeg', THREE.MathUtils.lerp(kneeBendR * moveBlend, sitKnee, yBotSitBlend), 0, 0);
+
+        setBone('leftUpperArm', -legSwing * armAmp * moveBlend, 0, ARM_REST_Z + THREE.MathUtils.lerp(idleArmZ, 0.15, moveBlend));
+        setBone('rightUpperArm', legSwing * armAmp * moveBlend, 0, -(ARM_REST_Z + THREE.MathUtils.lerp(idleArmZ, 0.15, moveBlend)));
+        setBone('leftLowerArm', THREE.MathUtils.lerp(0, baseElbowBend + elbowSwing, moveBlend), 0, 0);
+        setBone('rightLowerArm', THREE.MathUtils.lerp(0, baseElbowBend + elbowSwing, moveBlend), 0, 0);
+
+        setBone('hips', 0, hipYaw * moveBlend, hipRoll * moveBlend);
+        setBone('chest', THREE.MathUtils.lerp(idleChest, walkChest, moveBlend) * (1 - yBotSitBlend), -hipYaw * 0.7 * moveBlend, 0);
+        setBone('spine', THREE.MathUtils.lerp(idleSpine, walkSpine, moveBlend) + 0.25 * yBotSitBlend, 0, 0);
+        setBone('head', THREE.MathUtils.lerp(idleHeadX, walkHead, moveBlend), THREE.MathUtils.lerp(idleHeadY, 0, moveBlend), 0);
+      }
+    }
+
+    // ─────────────────────────────────────────────
+    // Input Handling
+    // ─────────────────────────────────────────────
+    function isTypingInField() {
+      const el = document.activeElement;
+      return !!el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable);
+    }
+
+    // Option (Mac) / Alt (Windows/Linux) + a WASD key triggers a discrete
+    // y-bot action instead of movement. KeyboardEvent.code and .altKey are
+    // physical-position based, so this needs no platform branching — Option
+    // already reports as 'AltLeft'/'AltRight' with altKey === true.
+    // (Sit/stand is its own bare-Shift toggle below, not part of this table —
+    // see the Shift handling in keyHandler.)
+    //
+    // To add a new action: add one entry here, then one case in
+    // triggerYBotAction. Nothing else needs to change.
+    const Y_BOT_ACTION_KEYS = {
+      KeyW: 'wave',
+      KeyD: 'side_step_right',
+      KeyA: 'side_step_left',
+    };
+
+    function triggerYBotAction(action) {
+      switch (action) {
+        case 'sit':
+          if (yBotMode !== 'ground') return; // can't sit while flying or swimming
+          yBotSitting = !yBotSitting;
+          break;
+        case 'wave':
+        case 'side_step_right':
+        case 'side_step_left':
+          // Placeholder — table entry exists so the chord is already live;
+          // implementation to follow.
+          console.log(`[y-bot action] '${action}' is not implemented yet.`);
+          break;
+      }
+    }
+
+    // 'F' is the single key for both coupled-movement directions:
+    //  - if y-bot is attached to x-bot (riding along), F detaches it.
+    //  - else if x-bot is escorting y-bot (following, from walk_beside_ybot),
+    //    F releases it — the same effect any other tool call already has on
+    //    escort, just available directly from the keyboard too.
+    //  - otherwise, F attaches y-bot to x-bot.
+    // These two modes are mutually exclusive by construction: F only ever
+    // starts one when neither is already active, so they can never end up
+    // running at the same time and fighting over the same position.
+    function handleAttachKey() {
+      if (yBotAttached) {
+        yBotAttached = false;
+        if (yBotDancing) stopYBotDance(); // leaving the dance-join is the same detach, just also stops the clip
+        return;
+      }
+      if (xBot.escortSide !== null) {
+        xBot.escortSide = null;
+        xBot.target = null;
+        xBot.status = 'idle';
+        return;
+      }
+      if (!currentVrm || !xBot.vrm) return; // nothing to attach to/from yet
+      if (xBot.dancing) {
+        // Join x-bot's dance instead of the usual ride-along attach: y-bot
+        // gets its own fixed spot/facing (frozen right here, once) instead
+        // of the live flank-tracking the normal attach below uses. Anchored
+        // to x-bot's canonical dance-facing/home-position rather than
+        // whatever it's currently doing — so joining mid-flourish (x-bot
+        // turned away or mid-step) still puts y-bot in the normal
+        // face-to-face spot, not wherever x-bot happens to be facing right
+        // that instant.
+        const baseAngle = xBot.danceFacingAngle ?? xBot.facingAngle;
+        const baseX = xBot.danceHomePos ? xBot.danceHomePos.x : xBot.pos.x;
+        const baseZ = xBot.danceHomePos ? xBot.danceHomePos.z : xBot.pos.z;
+        const bfx = Math.sin(baseAngle), bfz = Math.cos(baseAngle);
+        yBotDanceAnchor = {
+          x: baseX + bfx * XBOT_DANCE_JOIN_DISTANCE,
+          z: baseZ + bfz * XBOT_DANCE_JOIN_DISTANCE,
+        };
+        yBotDanceFacingAngle = baseAngle + Math.PI;
+        yBotAttachPrevXBotPos = null;
+        couplingHintDismissed = false;
+        couplingHintShownAt = performance.now();
+        yBotAttached = true;
+        yBotDancing = true;
+        startYBotDance();
+        return;
+      }
+      // Picks whichever flank is currently closer, the same "closer side
+      // wins" rule x-bot itself uses when escorting — just decided from
+      // y-bot's side this time.
+      const bfx = Math.sin(xBot.facingAngle), bfz = Math.cos(xBot.facingAngle);
+      const perpX = bfz, perpZ = -bfx;
+      const ax = xBot.pos.x + perpX * XBOT_ESCORT_DISTANCE;
+      const az = xBot.pos.z + perpZ * XBOT_ESCORT_DISTANCE;
+      const bx = xBot.pos.x - perpX * XBOT_ESCORT_DISTANCE;
+      const bz = xBot.pos.z - perpZ * XBOT_ESCORT_DISTANCE;
+      const curX = currentVrm.scene.position.x, curZ = currentVrm.scene.position.z;
+      const da = Math.hypot(ax - curX, az - curZ);
+      const db = Math.hypot(bx - curX, bz - curZ);
+      yBotAttachSide = da <= db ? 1 : -1;
+      yBotAttachPrevXBotPos = null; // avoid a stale-position velocity spike on attach
+      couplingHintDismissed = false;
+      couplingHintShownAt = performance.now();
+      yBotAttached = true;
+    }
+
+    // Shift is dual-purpose: held together with movement it's the existing
+    // run modifier; tapped by itself (no movement key involved at any point
+    // during the hold) it toggles sit/stand instead. shiftUsedForRun tracks,
+    // for the Shift key currently held down, whether movement ever
+    // overlapped it — checked both the instant Shift goes down (already
+    // moving, then Shift → run) and the instant any movement key goes down
+    // while Shift is held (Shift first, then movement → also run). Only if
+    // that never happens does releasing Shift mean "sit/stand", not "run".
+    let shiftUsedForRun = false;
+
+    function keyHandler(down) {
+      return (e) => {
+        if (isTypingInField()) return; // let normal typing (including Space) through to the field
+        if (e.code === 'Space' || e.code === 'ArrowDown') e.preventDefault();
+
+        // Discrete toggle, not a held key — only fire on the initial keydown.
+        if (down && e.code === 'KeyF' && !e.repeat) {
+          handleAttachKey();
+          return;
+        }
+
+        if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') {
+          if (down) {
+            if (!e.repeat && (keys.fwd || keys.back || keys.left || keys.right)) {
+              shiftUsedForRun = true; // already moving when Shift was pressed
+            }
+            keys.run = true;
+          } else {
+            keys.run = false;
+            if (!shiftUsedForRun) triggerYBotAction('sit');
+            shiftUsedForRun = false;
+          }
+          return;
+        }
+
+        // Action-key chord: only on the initial keydown (not OS auto-repeat,
+        // not keyup), and only while the modifier is actually held. Returns
+        // early so the same key doesn't also register as a movement input.
+        if (down && e.altKey && !e.repeat && Y_BOT_ACTION_KEYS[e.code]) {
+          triggerYBotAction(Y_BOT_ACTION_KEYS[e.code]);
+          return;
+        }
+
+        switch (e.code) {
+          case 'KeyW': case 'ArrowUp': keys.fwd = down; break;
+          case 'KeyS': keys.back = down; break;
+          case 'KeyA': case 'ArrowLeft': keys.left = down; break;
+          case 'KeyD': case 'ArrowRight': keys.right = down; break;
+          case 'Space': keys.flyUp = down; break;
+          case 'ArrowDown': case 'KeyC': case 'ControlLeft': case 'ControlRight': keys.flyDown = down; break;
+        }
+        if (down && keys.run && (keys.fwd || keys.back || keys.left || keys.right)) {
+          shiftUsedForRun = true; // Shift was already held, movement just started
+        }
+      };
+    }
+    window.addEventListener('keydown', keyHandler(true));
+    window.addEventListener('keyup', keyHandler(false));
+
+    let hintFaded = false;
+    function fadeHintOnFirstMove() {
+      if (hintFaded) return;
+      if (keys.fwd || keys.back || keys.left || keys.right || keys.flyUp || keys.flyDown) {
+        hintEl.classList.add('hide');
+        hintFaded = true;
+      }
+    }
+
+    // ─────────────────────────────────────────────
+    // Movement & Flight Update
+    // ─────────────────────────────────────────────
+    function updateMovement(delta) {
+      if (!currentVrm) return;
+      fadeHintOnFirstMove();
+
+      const curX = currentVrm.scene.position.x;
+      const curZ = currentVrm.scene.position.z;
+
+      let mode, nextX, nextZ, nextY;
+
+      if (yBotAttached && xBot.vrm) {
+        // Attached: position is driven by x-bot's own movement instead of
+        // WASD input — the same coupling x-bot uses when escorting y-bot,
+        // just pointed the other way. Feed-forward copies x-bot's velocity
+        // so the gap can't grow just from x-bot walking along; a gentle
+        // correction (or a faster hustle if the gap is large) handles any
+        // actual positional error. Flying/swimming are suspended for the
+        // same reason WASD is: x-bot only ever walks on the ground.
+        mode = 'ground';
+        yBotMode = mode;
+        altitude = 0;
+
+        if (yBotSitting) yBotSitting = false; // can't be sitting and attached at once
+
+        let xVelX = 0, xVelZ = 0;
+        if (!yBotDancing && yBotAttachPrevXBotPos && delta > 0) {
+          // Feed-forward only makes sense for the normal flank-attach, where
+          // y-bot's target is relative to x-bot's current position. While
+          // dancing, y-bot holds a fixed world-space spot (yBotDanceAnchor)
+          // regardless of anything x-bot does, so there's no velocity to
+          // feed forward — a plain correction pull below is all that's needed.
+          xVelX = (xBot.pos.x - yBotAttachPrevXBotPos.x) / delta;
+          xVelZ = (xBot.pos.z - yBotAttachPrevXBotPos.z) / delta;
+        }
+        yBotAttachPrevXBotPos = { x: xBot.pos.x, z: xBot.pos.z };
+
+        const bfx = Math.sin(xBot.facingAngle), bfz = Math.cos(xBot.facingAngle);
+        const perpX = bfz, perpZ = -bfx; // perpendicular to x-bot's facing
+        // Dance-join holds y-bot at its own fixed spot (frozen at the moment
+        // of joining — see handleAttachKey), independent of anything x-bot
+        // does afterward, including its periodic turn-away flourish.
+        const tx = (yBotDancing && yBotDanceAnchor)
+          ? yBotDanceAnchor.x
+          : xBot.pos.x + perpX * XBOT_ESCORT_DISTANCE * yBotAttachSide;
+        const tz = (yBotDancing && yBotDanceAnchor)
+          ? yBotDanceAnchor.z
+          : xBot.pos.z + perpZ * XBOT_ESCORT_DISTANCE * yBotAttachSide;
+        const dx = tx - curX;
+        const dz = tz - curZ;
+        const dist = Math.hypot(dx, dz);
+
+        let moveX = xVelX * delta, moveZ = xVelZ * delta;
+        if (dist > XBOT_ARRIVE_EPS) {
+          const correctionSpeed = dist > XBOT_ESCORT_CATCHUP_DIST
+            ? MOVE_SPEED * RUN_MULT * 1.2   // well out of position — hustle to catch up
+            : MOVE_SPEED * XBOT_ESCORT_STROLL_MULT; // feed-forward already keeps pace; gentle nudge
+          const step = Math.min(correctionSpeed * delta, dist);
+          moveX += (dx / dist) * step;
+          moveZ += (dz / dist) * step;
+        }
+
+        // y-bot's own facing is frozen at join time too (yBotDanceFacingAngle)
+        // — it never turns to track x-bot, including during the turn-away
+        // flourish. Not "walk toward the target point" like the normal
+        // escort catch-up logic below uses, since y-bot isn't walking anywhere.
+        const desiredFacing = (yBotDancing && yBotDanceFacingAngle !== null)
+          ? yBotDanceFacingAngle
+          : (dist > XBOT_ESCORT_CATCHUP_DIST ? Math.atan2(dx, dz) : xBot.facingAngle);
+        let diff = desiredFacing - facingAngle;
+        diff = Math.atan2(Math.sin(diff), Math.cos(diff));
+        facingAngle += diff * Math.min(1, 10 * delta);
+        currentPitch += (0 - currentPitch) * (1 - Math.exp(-PITCH_SMOOTH * delta));
+        currentVrm.scene.rotation.set(0, facingAngle + modelYawOffset, 0, 'YXZ');
+
+        const bound = WORLD_SIZE / 2 - 1;
+        const boundWest = WORLD_X_MIN + 1;
+        nextX = THREE.MathUtils.clamp(curX + moveX, boundWest, bound);
+        nextZ = THREE.MathUtils.clamp(curZ + moveZ, -bound, bound);
+        nextY = heightAt(nextX, nextZ);
+
+        forwardSpeed = delta > 0 ? Math.hypot(nextX - curX, nextZ - curZ) / delta : 0;
+
+        currentVrm.scene.position.x = nextX;
+        currentVrm.scene.position.y = nextY - yBotSitBlend * 0.35;
+        currentVrm.scene.position.z = nextZ;
+
+        landingTarget.visible = false;
+      } else {
+        const hasWater = isWaterAt(curX, curZ);
+        const groundY0 = heightAt(curX, curZ);
+        const floorAltitude = hasWater ? (groundY0 - WATER_LEVEL) : 0;
+
+        if (keys.flyUp) altitude += FLY_SPEED * delta;
+        if (keys.flyDown) altitude = Math.max(floorAltitude, altitude - FLY_SPEED * delta);
+        altitude = Math.max(floorAltitude, altitude);
+
+        const FLY_POSE_THRESHOLD = hasWater ? 0.4 : 0.01;
+        mode = altitude > FLY_POSE_THRESHOLD ? 'fly' : (hasWater ? 'swim' : 'ground');
+        yBotMode = mode; // last-known mode, read by the keydown handler's sit gate
+
+        // Any movement intent stands y-bot back up first, rather than requiring
+        // the Shift tap again — feels more forgiving than a strict toggle.
+        if (yBotSitting && (keys.fwd || keys.back || keys.left || keys.right || keys.flyUp || keys.flyDown)) {
+          yBotSitting = false;
+        }
+
+        const inputTurn = (keys.left ? 1 : 0) - (keys.right ? 1 : 0);
+        const inputFwd = (keys.fwd ? 1 : 0) - (keys.back ? 1 : 0) * BACK_MULT;
+
+        const targetAngVel = inputTurn * TURN_RATE_MAX;
+        if (inputTurn === 0) {
+          angularVelocity = 0;
+        } else {
+          angularVelocity += (targetAngVel - angularVelocity) * (1 - Math.exp(-TURN_SMOOTH * delta));
+        }
+        facingAngle += angularVelocity * delta;
+
+        const baseSpeed = mode === 'fly' ? FLY_SPEED : (mode === 'swim' ? SWIM_SPEED : MOVE_SPEED);
+        const maxSpeed = baseSpeed * (keys.run ? RUN_MULT : 1);
+        const targetSpeed = inputFwd * maxSpeed;
+        forwardSpeed += (targetSpeed - forwardSpeed) * (1 - Math.exp(-FWD_SMOOTH * delta));
+
+        let targetPitch = 0;
+        if (mode === 'fly') targetPitch = (forwardSpeed / maxSpeed) * 0.75;
+        else if (mode === 'swim') targetPitch = (forwardSpeed / maxSpeed) * 0.4;
+        currentPitch += (targetPitch - currentPitch) * (1 - Math.exp(-PITCH_SMOOTH * delta));
+
+        currentVrm.scene.rotation.set(currentPitch * (modelYawOffset === 0 ? 1 : -1), facingAngle + modelYawOffset, 0, 'YXZ');
+
+        const dirX = Math.sin(facingAngle);
+        const dirZ = Math.cos(facingAngle);
+
+        const bound = WORLD_SIZE / 2 - 1;
+        const boundWest = WORLD_X_MIN + 1;
+        nextX = THREE.MathUtils.clamp(currentVrm.scene.position.x + dirX * forwardSpeed * delta, boundWest, bound);
+        nextZ = THREE.MathUtils.clamp(currentVrm.scene.position.z + dirZ * forwardSpeed * delta, -bound, bound);
+
+        const groundY = heightAt(nextX, nextZ);
+        const hasWaterNext = isWaterAt(nextX, nextZ);
+        const surfaceY = hasWaterNext ? WATER_LEVEL : groundY;
+        nextY = surfaceY + altitude;
+
+        currentVrm.scene.position.x = nextX;
+        currentVrm.scene.position.y = nextY - yBotSitBlend * 0.35;
+        currentVrm.scene.position.z = nextZ;
+
+        // Update Landing Target Indicator position on the ground
+        if (mode === 'fly') {
+          landingTarget.visible = true;
+          landingTarget.position.set(nextX, groundY + 0.02, nextZ);
+
+          // Gentle pulse effect on outer ring
+          const pulse = 1 + Math.sin(clock.getElapsedTime() * 4) * 0.06;
+          outerRing.scale.set(pulse, pulse, 1);
+        } else {
+          landingTarget.visible = false;
+        }
+      }
+
+      updateLocomotion(delta, forwardSpeed, mode);
+
+      const moveDeltaX = nextX - prevAvatarPos.x;
+      const moveDeltaY = nextY - prevAvatarPos.y;
+      const moveDeltaZ = nextZ - prevAvatarPos.z;
+      camera.position.x += moveDeltaX;
+      camera.position.y += moveDeltaY;
+      camera.position.z += moveDeltaZ;
+
+      const targetY = nextY + 1.1;
+      controls.target.set(nextX, targetY, nextZ);
+      prevAvatarPos.set(nextX, nextY, nextZ);
+
+      updateCameraFollow(delta);
+
+      const altString = altitude > 0.05
+        ? ` (Alt: ${altitude.toFixed(1)}m)`
+        : (altitude < -0.05 ? ` (Depth: ${(-altitude).toFixed(1)}m)` : '');
+      posValue.textContent = `${nextX.toFixed(1)}, ${nextZ.toFixed(1)}${altString}`;
+      speedValue.textContent = Math.abs(forwardSpeed).toFixed(1) + ' m/s';
+
+      const coupledActive = yBotAttached || xBot.escortSide !== null;
+      // "Movement starts" means different things for the two directions:
+      // while attached, it's x-bot's own motion (which is what's actually
+      // carrying y-bot along); while escorting, it should be the *player's*
+      // own WASD input, not x-bot's — x-bot's catch-up hustle to reach y-bot
+      // can easily stay above a speed threshold for seconds on its own if it
+      // started any real distance away, which would dismiss the hint before
+      // the player has done anything at all.
+      const attachMoving = yBotAttached && Math.abs(forwardSpeed) > 0.15;
+      const escortMoving = xBot.escortSide !== null && (keys.fwd || keys.back);
+      const coupledMoving = attachMoving || escortMoving;
+      // Guard against the initial corrective "snap" into the exact flank
+      // position (which alone is usually fast enough to look like movement)
+      // dismissing the hint in the same frame it was shown, before it ever
+      // actually rendered.
+      const seenLongEnough = performance.now() - couplingHintShownAt > 600;
+      if (coupledActive && coupledMoving && seenLongEnough) couplingHintDismissed = true;
+      if (coupledActive && !couplingHintDismissed) {
+        couplingHintEl.textContent = yBotDancing
+          ? 'Dancing with x-bot - press F to stop'
+          : yBotAttached
+          ? 'You are attached to x-bot - press F to detach'
+          : 'x-bot is attached to you - press F to detach';
+        couplingHintEl.classList.add('show');
+      } else {
+        couplingHintEl.classList.remove('show');
+      }
+    }
+
+    function updateCameraFollow(delta) {
+      if (!cameraFollowEnabled) return;
+      const offsetX = camera.position.x - controls.target.x;
+      const offsetZ = camera.position.z - controls.target.z;
+      const horizR = Math.hypot(offsetX, offsetZ);
+      if (horizR < 0.01) return;
+
+      const currentAzimuth = Math.atan2(offsetX, offsetZ);
+      const desiredAzimuth = facingAngle + Math.PI;
+      let diff = desiredAzimuth - currentAzimuth;
+      diff = Math.atan2(Math.sin(diff), Math.cos(diff));
+      const newAzimuth = currentAzimuth + diff * (1 - Math.exp(-CAM_FOLLOW_SMOOTH * delta));
+
+      camera.position.x = controls.target.x + horizR * Math.sin(newAzimuth);
+      camera.position.z = controls.target.z + horizR * Math.cos(newAzimuth);
+    }
+
+    function updateUnderwaterFX(delta) {
+      const camSubmerged = isWaterAt(camera.position.x, camera.position.z) && camera.position.y < WATER_LEVEL - 0.05;
+      const target = camSubmerged ? 1 : 0;
+      underwaterBlend += (target - underwaterBlend) * (1 - Math.exp(-4 * delta));
+
+      scene.fog.color.copy(FOG_COLOR_NORMAL).lerp(FOG_COLOR_WATER, underwaterBlend);
+      scene.fog.near = THREE.MathUtils.lerp(30, 1, underwaterBlend);
+      scene.fog.far = THREE.MathUtils.lerp(90, 22, underwaterBlend);
+      scene.background.copy(FOG_COLOR_NORMAL).lerp(FOG_COLOR_WATER, underwaterBlend);
+    }
+
+    // ─────────────────────────────────────────────
+    // Render loop
+    // ─────────────────────────────────────────────
+    function animate() {
+      requestAnimationFrame(animate);
+      const delta = Math.min(clock.getDelta(), 0.05);
+
+      const elapsed = clock.getElapsedTime();
+
+      if (currentVrm) yBotPreMovePos.copy(currentVrm.scene.position);
+
+      try {
+        updateMovement(delta);
+        updateBlink(delta);
+        if (currentVrm) currentVrm.update(delta);
+      } catch (err) {
+        console.error('Update error:', err);
+      }
+
+      try {
+        updateXBot(delta, elapsed);
+      } catch (err) {
+        console.error('x-bot update error:', err);
+      }
+
+      try {
+        resolveCharacterCollision();
+      } catch (err) {
+        console.error('Collision resolution error:', err);
+      }
+
+      updateLocationMarkers(elapsed);
+      updateWaterWaves(elapsed);
+      updateUnderwaterFX(delta);
+      updateSeaweed(elapsed);
+      updateFish(elapsed);
+
+      controls.update();
+      renderer.render(scene, camera);
+
+      frameCount++;
+      fpsAccum += delta;
+      const now = performance.now();
+      if (now - lastFpsUpdate >= 500) {
+        fpsValue.textContent = (fpsAccum > 0 ? frameCount / fpsAccum : 0).toFixed(0);
+        frameCount = 0; fpsAccum = 0; lastFpsUpdate = now;
+      }
+    }
+
+    // ─────────────────────────────────────────────
+    // Events
+    // ─────────────────────────────────────────────
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    });
+
+    resetCamBtn.addEventListener('click', () => {
+      if (!currentVrm) return;
+      controls.target.set(currentVrm.scene.position.x, currentVrm.scene.position.y + 1.1, currentVrm.scene.position.z);
+      const horizR = Math.hypot(DEFAULT_CAM_OFFSET.x, DEFAULT_CAM_OFFSET.z);
+      const behindAngle = facingAngle + Math.PI;
+      camera.position.set(
+        controls.target.x + horizR * Math.sin(behindAngle),
+        controls.target.y + DEFAULT_CAM_OFFSET.y,
+        controls.target.z + DEFAULT_CAM_OFFSET.z
+      );
+      controls.update();
+    });
+
+    followCamBtn.addEventListener('click', () => {
+      cameraFollowEnabled = !cameraFollowEnabled;
+      followCamBtn.classList.toggle('active', cameraFollowEnabled);
+      followCamState.textContent = cameraFollowEnabled ? 'ON' : 'OFF';
+      followCamBtn.setAttribute('data-tooltip', 'Tank Controls: ' + (cameraFollowEnabled ? 'On' : 'Off'));
+      followCamBtn.setAttribute('aria-label', 'Tank Controls: ' + (cameraFollowEnabled ? 'On' : 'Off'));
+    });
+
+    diagnosticsToggle.addEventListener('click', () => {
+      const nowHidden = !statusPanel.classList.contains('hidden');
+      statusPanel.classList.toggle('hidden', nowHidden);
+      diagnosticsToggle.classList.toggle('active', !nowHidden);
+      const label = nowHidden ? 'Show diagnostics' : 'Hide diagnostics';
+      diagnosticsToggle.setAttribute('data-tooltip', label);
+      diagnosticsToggle.setAttribute('aria-label', label);
+    });
+
+    chatToggle.addEventListener('click', () => {
+      const expanding = chatExpand.classList.contains('collapsed');
+      chatExpand.classList.toggle('collapsed', !expanding);
+      chatToggle.classList.toggle('expanded', expanding);
+      chatToggle.title = expanding ? 'Hide messages' : 'Show messages';
+      if (expanding) {
+        chatUnreadDot.classList.remove('visible');
+        chatLog.scrollTop = chatLog.scrollHeight;
+      }
+    });
+
+
+    // ─────────────────────────────────────────────
+    // Init
+    // ─────────────────────────────────────────────
+    const SAMPLE_URL =
+      'https://cdn.jsdelivr.net/gh/pixiv/three-vrm@dev/packages/three-vrm/examples/models/VRM1_Constraint_Twist_Sample.vrm';
+
+    // Drop your own avatars in static/models/ as y-bot.vrm and x-bot.vrm —
+    // both fall back to the public sample VRM automatically if not found.
+    const Y_BOT_VRM_URL = '/static/models/y-bot.vrm';
+    const X_BOT_VRM_URL = '/static/models/x-bot.vrm';
+
+    (function init() {
+      try {
+        fetch(Y_BOT_VRM_URL, { method: 'HEAD' })
+          .then((r) => loadVrmFromUrl(r.ok ? Y_BOT_VRM_URL : SAMPLE_URL, r.ok ? 'y-bot.vrm' : 'sample (fallback for y-bot)'))
+          .catch(() => loadVrmFromUrl(SAMPLE_URL, 'sample (fallback for y-bot)'));
+        fetch(X_BOT_VRM_URL, { method: 'HEAD' })
+          .then((r) => loadXBotVrm(r.ok ? X_BOT_VRM_URL : SAMPLE_URL, r.ok ? 'x-bot.vrm' : 'sample (fallback for x-bot)'))
+          .catch(() => loadXBotVrm(SAMPLE_URL, 'sample (fallback for x-bot)'));
+      }
+      catch (err) { console.error(err); setStatus('Error', 'warn'); showError('Initialization failed: ' + err.message); }
+      animate();
+    })();
+
+    // ─────────────────────────────────────────────
+    // Chat — talk to x-bot (Flask -> Ollama tool-calling loop)
+    // ─────────────────────────────────────────────
+    function addChatMessage(who, text) {
+      const div = document.createElement('div');
+      div.className = 'chat-msg ' + who;
+      const whoLabel = who === 'user' ? 'You' : who === 'bot' ? 'x-bot' : 'System';
+      div.innerHTML = `<div class="who">${whoLabel}</div><div class="text"></div>`;
+      div.querySelector('.text').textContent = text;
+      chatLog.appendChild(div);
+      chatLog.scrollTop = chatLog.scrollHeight;
+    }
+
+    // Same as addChatMessage('bot', ...) but starts empty and returns an
+    // appender — used while a streamed reply is still arriving so text can
+    // be pushed into the bubble token-by-token instead of all at once.
+    function beginStreamingBotMessage() {
+      const div = document.createElement('div');
+      div.className = 'chat-msg bot';
+      div.innerHTML = `<div class="who">x-bot</div><div class="text"></div>`;
+      const textEl = div.querySelector('.text');
+      chatLog.appendChild(div);
+      chatLog.scrollTop = chatLog.scrollHeight;
+      return (delta) => {
+        textEl.textContent += delta;
+        chatLog.scrollTop = chatLog.scrollHeight;
+      };
+    }
+
+    // ─────────────────────────────────────────────
+    // Dev console — mirrors the tool-call / tool-result trace that the
+    // sample Ollama script prints to the terminal, but in the UI. Keeps
+    // only the current and previous turn (devConsoleTurns[0] is newest).
+    // ─────────────────────────────────────────────
+    let devConsoleTurns = [];
+
+    function renderDevConsole() {
+      devConsoleLog.innerHTML = '';
+      if (devConsoleTurns.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'console-empty';
+        empty.textContent = 'No turns yet — send a message to x-bot.';
+        devConsoleLog.appendChild(empty);
+        return;
+      }
+      devConsoleTurns.forEach((turn, i) => {
+        const block = document.createElement('div');
+        block.className = 'console-turn';
+
+        const label = document.createElement('div');
+        label.className = 'console-turn-label';
+        label.textContent = ['Current turn', 'Previous turn', '2 turns ago'][i] + ' · ' + turn.time;
+        block.appendChild(label);
+
+        const userLine = document.createElement('div');
+        userLine.className = 'console-line-user';
+        userLine.innerHTML = '<span class="prefix">›</span>';
+        userLine.appendChild(document.createTextNode(turn.message));
+        block.appendChild(userLine);
+
+        if (turn.statusLine) {
+          const statusLine = document.createElement('div');
+          statusLine.className = 'console-line-status';
+          statusLine.textContent = turn.statusLine;
+          block.appendChild(statusLine);
+        }
+
+        turn.steps.forEach((step) => {
+          const stepEl = document.createElement('div');
+          stepEl.className = 'console-step';
+
+          const callLine = document.createElement('div');
+          callLine.className = 'console-step-call';
+          callLine.textContent = `tool_call: ${step.tool}(${JSON.stringify(step.args)})`;
+          stepEl.appendChild(callLine);
+
+          const resultPre = document.createElement('pre');
+          const isErr = step.result && step.result.ok === false;
+          resultPre.className = isErr ? 'err' : 'ok';
+          resultPre.textContent = JSON.stringify(step.result, null, 2);
+          stepEl.appendChild(resultPre);
+
+          // look_around (or any future vision tool) attaches its composite
+          // image here rather than inlining it into the JSON above, so devs
+          // can see exactly what the model saw without a giant base64 blob
+          // cluttering the result dump.
+          if (step.image) {
+            const img = document.createElement('img');
+            img.src = step.image;
+            img.alt = `${step.tool} snapshot`;
+            img.style.cssText = 'display:block; max-width:100%; margin-top:6px; border-radius:4px; border:1px solid rgba(255,255,255,0.15);';
+            stepEl.appendChild(img);
+          }
+
+          block.appendChild(stepEl);
+        });
+
+        if (turn.reply) {
+          const replyLine = document.createElement('div');
+          replyLine.className = 'console-reply';
+          replyLine.innerHTML = '<span class="prefix">x-bot:</span>';
+          replyLine.appendChild(document.createTextNode(turn.reply));
+          block.appendChild(replyLine);
+        }
+
+        devConsoleLog.appendChild(block);
+      });
+    }
+
+    function logDevTurn(message, data) {
+      devConsoleTurns.unshift({
+        time: new Date().toLocaleTimeString(),
+        message,
+        statusLine: (data && data.status_line) || '',
+        steps: (data && data.steps) || [],
+        reply: (data && data.reply) || '',
+      });
+      devConsoleTurns = devConsoleTurns.slice(0, 3);
+      renderDevConsole();
+    }
+
+    renderDevConsole(); // show the empty state on load
+
+    function setDevConsoleOpen(open) {
+      devConsole.classList.toggle('open', open);
+      devConsoleToggle.classList.toggle('active', open);
+      const label = open ? 'Hide dev console' : 'Show dev console';
+      devConsoleToggle.setAttribute('data-tooltip', label);
+      devConsoleToggle.setAttribute('aria-label', label);
+      // Newest turn renders at the top of #dev-console-log, but the log's
+      // scroll position can be left further down from a previous session
+      // (e.g. the user scrolled to read an older turn before closing it).
+      // Force it back to the top on every open so the latest message is
+      // always what's visible first, rather than wherever it was left.
+      if (open) devConsoleLog.scrollTop = 0;
+    }
+
+    devConsoleToggle.addEventListener('click', (e) => {
+      e.stopPropagation(); // don't let this click immediately hit the document listener below
+      setDevConsoleOpen(!devConsole.classList.contains('open'));
+    });
+
+    // Click anywhere outside the console (or its toggle) to close it.
+    document.addEventListener('click', (e) => {
+      if (!devConsole.classList.contains('open')) return;
+      if (devConsole.contains(e.target) || devConsoleToggle.contains(e.target)) return;
+      setDevConsoleOpen(false);
+    });
+
+    async function sendChatMessage(text) {
+      if (!text.trim()) return;
+      // Only the most recent exchange is ever shown (full history still lives
+      // server-side in message_history, and the dev console keeps a rolling
+      // trace of the last 3 turns for anyone who wants more) — so a new turn
+      // starts by clearing the log, then the user's message and x-bot's
+      // reply both land in it together as one pair.
+      chatLog.innerHTML = '';
+      addChatMessage('user', text);
+      chatQuicklinks.style.display = 'none'; // one-time starter prompts — not useful once a real conversation is underway
+      chatInput.value = '';
+      chatInput.blur(); // release focus immediately so the character stays controllable while x-bot thinks
+      chatSend.disabled = true;
+
+      const state = {
+        xbot: { x: xBot.pos.x, z: xBot.pos.z, status: xBot.status, facingAngle: xBot.facingAngle },
+        ybot: currentVrm
+          ? { x: currentVrm.scene.position.x, z: currentVrm.scene.position.z, facingAngle: facingAngle, sitting: yBotSitting, mode: yBotMode, dancing: yBotDancing }
+          : { x: 0, z: 0, facingAngle: 0, sitting: false, mode: 'ground', dancing: false },
+      };
+
+      // Created lazily on the first 'delta' event — if the model goes
+      // straight to tool calls with no preamble text (the common case),
+      // no empty bubble ever appears; it's created the instant there's
+      // actual text to show.
+      let appendToBotBubble = null;
+      let streamedAnyText = false;
+
+      try {
+        const res = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: text, state }),
+        });
+        if (!res.ok || !res.body) {
+          throw new Error(`HTTP ${res.status}`);
+        }
+
+        // The backend streams newline-delimited SSE frames
+        // ("data: {...}\n\n") rather than one JSON blob, so the reply can
+        // render token-by-token as the model generates it instead of
+        // popping in all at once at the end of the whole agent turn.
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+        let finalData = { steps: [], reply: '' };
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+
+          // SSE frames are separated by a blank line; there may be zero,
+          // one, or several complete frames in the buffer after any given
+          // chunk, plus a trailing partial frame to leave for next time.
+          const frames = buffer.split('\n\n');
+          buffer = frames.pop();
+
+          for (const frame of frames) {
+            const line = frame.split('\n').find((l) => l.startsWith('data: '));
+            if (!line) continue;
+            const event = JSON.parse(line.slice(6));
+
+            if (event.type === 'delta') {
+              if (!appendToBotBubble) {
+                appendToBotBubble = beginStreamingBotMessage();
+              }
+              appendToBotBubble(event.text);
+              streamedAnyText = true;
+            } else if (event.type === 'done') {
+              finalData = event;
+            } else if (event.type === 'error') {
+              addChatMessage('sys', event.reply);
+              finalData = { steps: [], reply: event.reply, status_line: event.status_line };
+            }
+            // 'step' events are informational only — the full step list
+            // also arrives in 'done', which is all logDevTurn needs.
+          }
+        }
+
+        // Covers the rare case where 'done' carries reply text that was
+        // never streamed as deltas — e.g. the hardcoded "(reached the max
+        // number of tool-call steps...)" message — so it still reaches the
+        // user instead of silently vanishing.
+        if (!streamedAnyText && finalData.reply) {
+          addChatMessage('bot', finalData.reply);
+        }
+        if ((streamedAnyText || finalData.reply) && chatExpand.classList.contains('collapsed')) {
+          chatUnreadDot.classList.add('visible');
+        }
+        // finalData.actions is intentionally NOT re-applied here: every
+        // action in it (pick_up_block, put_down_block, stack_block, sit,
+        // stand, wave, hug, turn, escort, dynamic walks) was already
+        // dispatched in real time via the /api/action_poll loop above, the
+        // moment its tool actually ran. Queuing it again here would replay
+        // the whole turn's actions a second time back-to-back once the
+        // stream ends — which is exactly what caused blocks to snap into
+        // the carried pose and drop again right at the end. It's kept in
+        // the response purely as a record of what happened this turn.
+        logDevTurn(text, finalData);
+      } catch (err) {
+        const message = 'Could not reach the backend: ' + err.message;
+        addChatMessage('sys', message);
+        logDevTurn(text, { steps: [], reply: message });
+      } finally {
+        chatSend.disabled = false;
+      }
+    }
+
+    chatForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      sendChatMessage(chatInput.value);
+    });
+    document.querySelectorAll('.quick-btn').forEach((btn) => {
+      btn.addEventListener('click', () => sendChatMessage(btn.dataset.msg));
+    });
+    chatReset.addEventListener('click', async () => {
+      chatLog.innerHTML = '';
+      try { await fetch('/api/reset', { method: 'POST' }); } catch (e) {}
+      resetBlockPositions();
+      stopXBotDance();
+      if (yBotDancing) { yBotAttached = false; stopYBotDance(); }
+      addChatMessage('sys', 'Conversation reset.');
+      chatQuicklinks.style.display = 'flex'; // bring the starter prompts back for the fresh conversation
+      devConsoleTurns = [];
+      renderDevConsole();
+    });
+
+    // If a movement key was being held when the user clicks into the chat
+    // box, release it — otherwise y-bot could keep moving after focus leaves.
+    chatInput.addEventListener('focus', () => {
+      keys.fwd = keys.back = keys.left = keys.right = keys.run = keys.flyUp = keys.flyDown = false;
+    });
+  </script>
+</body>
+</html>

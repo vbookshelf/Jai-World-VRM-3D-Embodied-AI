@@ -3,7 +3,8 @@ Interact with an AI powered 3D vrm avatar in a virtual world. A lightweight desk
 
 This project explores personalized 3D world generation, embodied AI, AI spatial navigation, and virtual character interaction. This code is a working example. It's a starting point that can be tuned and expanded.
 
-Tech stack: Three.js + HTML + CSS + JS + Flask + Ollama/OpenRouter
+Tech stack:<br>
+Three.js + HTML + CSS + JS + Flask + Ollama/OpenRouter (qwen3.5:9b/ qwen3.5-flash-02-23)
 
 YouTube Video Demo:<br>
 https://www.youtube.com/watch?v=5ihb6zhLim8
